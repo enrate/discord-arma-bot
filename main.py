@@ -21,8 +21,8 @@ class ServerMonitorBot(commands.Bot):
             
             await self.change_presence(
                 activity=discord.Activity(
-                    type=discord.ActivityType.watching,
-                    name=f"{len(players)}/{server_info.max_players} players"
+                    type=discord.ActivityType.playing,
+                    name=f"{len(players)}/{server_info.max_players} | Server 1 (1pp)"
                 )
             )
         except Exception as e:
