@@ -8,12 +8,17 @@
   },
   "dependencies": {
     "@sapphire/snowflake": "^3.5.5",
+    "a2s": "^1.0.2",
     "basic-ftp": "^5.0.5",
+    "child-process-promise": "^2.2.1",
     "discord.js": "^14.18.0",
     "dotenv": "^16.5.0",
-    "ftp": "^0.3.10"
+    "ftp": "^0.3.10",
+    "node-a2s": "^1.0.0",
+    "python-shell": "^5.0.0"
   },
   "devDependencies": {
+    "@types/child-process-promise": "^2.2.6",
     "@types/ftp": "^0.3.36",
     "@types/node": "^20.17.30",
     "typescript": "^5.3.3"

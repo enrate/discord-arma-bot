@@ -12,6 +12,10 @@ services:
       - FTP_PORT=${FTP_PORT}
       - FTP_USER=${FTP_USER}
       - FTP_PASSWORD=${FTP_PASSWORD}
+      - SERVER_IP=${SERVER_IP}
+      - SERVER_PORT=${SERVER_PORT}
     volumes:
-      - ./data:/app/data
-      - ./.env:/app/.env
+      - arma-bot-data:/app/data
+
+volumes:
+  arma-bot-data:

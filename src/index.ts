@@ -1,68 +1,75 @@
-import 'dotenv/config'; // Добавьте эту строку ПЕРВОЙ
-import * as FTP from 'ftp';
-import { Client, IntentsBitField, ActivityType, EmbedBuilder, Message } from 'discord.js';
-import { FTPResponse, Client as FTPClient } from 'basic-ftp';
-import { createReadStream, existsSync, readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
+import 'dotenv/config';
+import { Client, IntentsBitField, ActivityType, EmbedBuilder, Message  } from 'discord.js';
+import { Client as FTPClient } from 'basic-ftp';
 import { PassThrough } from 'stream';
 import { TextChannel } from 'discord.js';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { join } from 'path';
+import nodea2s from 'node-a2s';
 
-
-interface FTPConfig {
-    host: string;
-    port: number;
-    user: string;
-    password: string;
-    filePath: string;
+interface ServerConfig {
+    ftp: {
+        host: string;
+        port: number;
+        user: string;
+        password: string;
+        filePath: string;
+    };
+    a2s: {
+        ip: string;
+        port: number;
+    };
+    discord: {
+        token: string;
+        channelId: string;
+    };
 }
 
 interface ServerStats {
     connected_players: Record<string, string>;
 }
 
-class ServerMonitorBot {
+class ArmaBot {
     private discordClient: Client;
-    private ftpConfig: FTPConfig;
-    private channelId: string;
+    private config: ServerConfig;
     private statusMessageId: string | null = null;
-    private readonly messageFile = process.env?.local ? join(__dirname, 'last_message.txt') : '/app/data/last_message.txt';
+    private readonly messageFile = join(__dirname,'../data', 'last_message.txt');
 
-    constructor() {
+    constructor(config: ServerConfig) {
+        this.config = config;
         this.discordClient = new Client({
-            intents: [
-                IntentsBitField.Flags.Guilds,
-                IntentsBitField.Flags.GuildMessages
-            ]
+            intents: [IntentsBitField.Flags.GuildMessages]
         });
-
-        this.ftpConfig = {
-            host: process.env.FTP_HOST!,
-            port: parseInt(process.env.FTP_PORT || '21'),
-            user: process.env.FTP_USER!,
-            password: process.env.FTP_PASSWORD!,
-            filePath: '/profiles/ArmaReforgerServer/profile/ServerAdminTools_Stats.json'
-        };
-
-        this.channelId = process.env.CHANNEL_ID!;
-        this.loadLastMessageId();
+        this.loadMessageId();
     }
 
-    private loadLastMessageId(): void {
-        try {
-            if (existsSync(this.messageFile)) {
-                this.statusMessageId = readFileSync(this.messageFile, 'utf-8');
-            }
-        } catch (error) {
-            console.error('Error loading message ID:', error);
-        }
+    public async start() {
+        await this.initDiscord();
+        this.startUpdateLoop();
     }
 
-    private saveLastMessageId(messageId: string): void {
+    private async initDiscord() {
+        await this.discordClient.login(this.config.discord.token);
+        console.log(`Logged in as ${this.discordClient.user?.tag}`);
+    }
+
+    
+
+    private async getA2SInfo() {
+    const originalConsoleLog = console.log;
+    const originalConsoleError = console.error;
         try {
-            writeFileSync(this.messageFile, messageId);
-            this.statusMessageId = messageId;
+        console.log = () => {};
+        console.error = () => {};
+    
+            const serverInfo = await nodea2s.info(`${this.config.a2s.ip}:${this.config.a2s.port}`);
+            return serverInfo
         } catch (error) {
-            console.error('Error saving message ID:', error);
+            console.error('A2S Error:', error);
+            return { players: 0, maxPlayers: 0 };
+        } finally {
+            console.log = originalConsoleLog;
+            console.error = originalConsoleError;
         }
     }
 
@@ -75,62 +82,11 @@ class ServerMonitorBot {
             console.error('Failed to close FTP connection:', closeError);
         }
     }
-    
-    // private async getPlayersFromFTP(): Promise<string[] | null> {
-    //     const client = new FTPClient();
-    //         // Настройка таймаутов и параметров
-    // // client.ftp.verbose = true; // Включить детальное логирование
-    // client.ftp.tlsOptions = {
-    //     timeout: 30_000,
-    //     sessionTimeout: 30_000,
-    //     rejectUnauthorized: false, // Отключает проверку сертификата
-    //     checkServerIdentity: () => undefined
-    // };
-    //     try {
-    //         // Подключаемся с конфигурацией
-    //         await client.access({
-    //             host: this.ftpConfig.host,
-    //             user: this.ftpConfig.user,
-    //             password: this.ftpConfig.password,
-    //             port: this.ftpConfig.port,
-    //             secure: false,
-    //             secureOptions: {
-    //                 timeout: 30_000,
-    //                 sessionTimeout: 30_000,
-    //             }
-    //         });
-    
-    //         // Создаем поток для записи данных
-    //         const bufferStream = new PassThrough();
-            
-    //         // Исправляем название метода (downloadTo вместо downloadToStream)
-    //         await client.downloadTo(bufferStream, this.ftpConfig.filePath);
-            
-    //         // Собираем данные через Buffer
-    //         const chunks: Buffer[] = [];
-    //         for await (const chunk of bufferStream) {
-    //             chunks.push(chunk);
-    //         }
-    //         // await downloadPromise; // Дожидаемся завершения загрузки
-    
-    //         const data = Buffer.concat(chunks).toString();
-    //         const stats: ServerStats = JSON.parse(data);
-            
-    //         return Object.values(stats.connected_players);
-            
-    //     } catch (error) {
-    //         console.error('FTP Operation Failed:', error instanceof Error ? error.message : error);
-    //         return null;
-    //     } finally {
-    //         await this.safeCloseClient(client);
-    //     }
-    // }
 
-    private async getPlayersFromFTP(): Promise<string[] | null> {
+    private async getFTPPlayers(): Promise<string[] | null> {
         const client = new FTPClient();
         
         // Настройки для улучшения стабильности соединения
-        // client.ftp.verbose = true;
         client.ftp.encoding = 'binary';
     
         try {
@@ -155,10 +111,10 @@ class ServerMonitorBot {
         for (let i = 1; i <= attempts; i++) {
             try {
                 await client.access({
-                    host: this.ftpConfig.host,
-                    port: this.ftpConfig.port,
-                    user: this.ftpConfig.user,
-                    password: this.ftpConfig.password,
+                    host: this.config.ftp.host,
+                    port: this.config.ftp.port,
+                    user: this.config.ftp.user,
+                    password: this.config.ftp.password,
                     secure: true,
                     secureOptions: {
                         rejectUnauthorized: false,
@@ -178,7 +134,7 @@ class ServerMonitorBot {
         let chunks: Buffer[] = [];
         
         try {
-            const downloadPromise = client.downloadTo(bufferStream, this.ftpConfig.filePath);
+            const downloadPromise = client.downloadTo(bufferStream, this.config.ftp.filePath);
             
             // Собираем данные через событие 'data'
             bufferStream.on('data', (chunk) => chunks.push(chunk));
@@ -231,114 +187,112 @@ class ServerMonitorBot {
             error.stack?.replace('Error: ', '') || 'No stack trace'
         }`;
     }
-
-// private async getPlayersFromFTP(): Promise<string[] | null> {
-//     return new Promise((resolve, reject) => {
-//         const client = new FTP();
-        
-//         client.on('ready', () => {
-//             client.get(this.ftpConfig.filePath, (err, stream) => {
-//                 if (err) return reject(err);
-                
-//                 const chunks: Buffer[] = [];
-//                 stream.on('data', (chunk) => chunks.push(chunk));
-//                 stream.on('end', () => {
-//                     try {
-//                         const data = Buffer.concat(chunks).toString();
-//                         const stats: ServerStats = JSON.parse(data);
-//                         resolve(Object.values(stats.connected_players));
-//                     } catch (parseError) {
-//                         reject(parseError);
-//                     }
-//                 });
-//             });
-//         });
-
-//         client.connect({
-//             host: this.ftpConfig.host,
-//             port: this.ftpConfig.port,
-//             user: this.ftpConfig.user,
-//             password: this.ftpConfig.password,
-//             connTimeout: 30000,
-//             keepalive: 10000
-//         });
-
-//         client.on('error', reject);
-//     });
-// }
-
-    private formatPlayers(players: string[] | null): string {
-        if (!players || players.length === 0) {
-            return 'Сейчас никого нет на сервере';
+    
+        private loadMessageId() {
+            try {
+                if (existsSync(this.messageFile)) {
+                    this.statusMessageId = readFileSync(this.messageFile, 'utf-8');
+                }
+            } catch (error) {
+                console.error('Error loading message ID:', error);
+            }
         }
-
-        const playerList = players.map(p => `• ${p}`).join('\n');
-        return playerList.length > 4096 
-            ? 'Слишком много игроков для отображения' 
-            : playerList;
-    }
-
-    private async getOrCreateMessage(): Promise<Message | null> {
-        const channel = await this.discordClient.channels.fetch(this.channelId) as TextChannel;
-        if (!channel?.isTextBased()) return null;
-
-        try {
-            if (this.statusMessageId) {
+    
+        private saveMessageId(messageId: string) {
+            try {
+                writeFileSync(this.messageFile, messageId);
+                this.statusMessageId = messageId;
+            } catch (error) {
+                console.error('Error saving message ID:', error);
+            }
+        }
+    
+        private async getOrCreateMessage(channel: TextChannel): Promise<Message | null> {
+            if (!this.statusMessageId) {
+                const message = await channel.send('Инициализация...');
+                this.saveMessageId(message.id);
+                return message;
+            }
+    
+            try {
                 return await channel.messages.fetch(this.statusMessageId);
-            }
-        } catch (error) {
-            console.log('Message not found, creating new one');
-        }
-
-        const message = await channel.send('Инициализация...');
-        
-        this.saveLastMessageId(message.id);
-        return message;
-    }
-
-    private startUpdateTasks(): void {
-        // Обновление списка игроков
-        setInterval(async () => {
-            try{
-                const data = await this.getPlayersFromFTP(); 
-            try {
-                const message = await this.getOrCreateMessage();
-                if (!message) return;
-
-                const embed = new EmbedBuilder()
-                    .setTitle(`Игроки онлайн (${data?.length || 0}/128)`)
-                    .setDescription(this.formatPlayers(data))
-                    .setColor(0x00FF00);
-
-                await message.edit({ content: null, embeds: [embed] });
             } catch (error) {
-                console.error('Update error:', error);
+                console.log('Message not found, creating new one');
+                const message = await channel.send('Инициализация...');
+                this.saveMessageId(message.id);
+                return message;
             }
+        }
+    
+        private async updateStatus() {
             try {
-                const count = data?.length || 0;
-
-                this.discordClient.user?.setActivity({
-                    name: `${count}/128 | server 1 (1pp)`,
+                const a2sInfo = await this.getA2SInfo();
+                await Promise.all([
+                    this.discordClient.user?.setActivity({
+                    name: `${a2sInfo.players}/${a2sInfo.maxPlayers} | Server 1 (1pp)`,
                     type: ActivityType.Playing
-                });
-            } catch (error) {
-                console.error('Status update error:', error);
+                })]
+            )
+            } catch (e) {
+                console.error('Status update error:', e);
             }
-        } catch(error) {
-            console.error('get data from ftp error:', error);
         }
-        }, 120_000);
-    }
+    
+        private async updatePlayerList() {
+            try {
+                const channel = await this.discordClient.channels.fetch(
+                    this.config.discord.channelId
+                ) as TextChannel;
+    
+                if (!channel) return;
+    
+                const message = await this.getOrCreateMessage(channel);
+                if (!message) return;
+    
+                const players = await this.getFTPPlayers();
+                const embed = new EmbedBuilder()
+                    .setTitle('Игроки онлайн')
+                    .setDescription(players?.join('\n') || 'Сейчас никого нет')
+                    .setColor(0x00FF00);
+    
+                await message.edit({ embeds: [embed] });
+            } catch (e) {
+                console.error('Player list update error:', e);
+            }
+        }
 
-    public async start(): Promise<void> {
-        this.discordClient.once('ready', () => {
-            console.log(`Бот ${this.discordClient.user?.tag} готов к работе!`);
-            this.startUpdateTasks();
-        });
-
-        await this.discordClient.login(process.env.DISCORD_TOKEN);
+    private startUpdateLoop() {
+        // Обновление статуса каждую минуту
+        setInterval(() => this.updateStatus(), 60_000);
+        
+        // Обновление списка игроков каждые 2 минуты
+        setInterval(() => this.updatePlayerList(), 120_000);
+        
+        Promise.all([
+            this.updateStatus(),
+            this.updatePlayerList()
+        ]).catch(console.error);
     }
 }
 
+// Конфигурация
+const config: ServerConfig = {
+    ftp: {
+        host: process.env.FTP_HOST!,
+        port: parseInt(process.env.FTP_PORT || '21'),
+        user: process.env.FTP_USER!,
+        password: process.env.FTP_PASSWORD!,
+        filePath: '/profiles/ArmaReforgerServer/profile/ServerAdminTools_Stats.json'
+    },
+    a2s: {
+        ip: process.env.SERVER_IP!,
+        port: parseInt(process.env.SERVER_PORT || '2005')
+    },
+    discord: {
+        token: process.env.DISCORD_TOKEN!,
+        channelId: process.env.CHANNEL_ID!
+    }
+};
+
 // Запуск бота
-new ServerMonitorBot().start();
+new ArmaBot(config).start();
