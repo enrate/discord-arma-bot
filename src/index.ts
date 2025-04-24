@@ -80,6 +80,7 @@ class ServerMonitorBot {
             // Настройка таймаутов и параметров
     // client.ftp.verbose = true; // Включить детальное логирование
     client.ftp.tlsOptions = {
+        timeout: 30_000,
         rejectUnauthorized: false, // Отключает проверку сертификата
         checkServerIdentity: () => undefined
     };
@@ -90,7 +91,10 @@ class ServerMonitorBot {
                 user: this.ftpConfig.user,
                 password: this.ftpConfig.password,
                 port: this.ftpConfig.port,
-                secure: false
+                secure: false,
+                secureOptions: {
+                    timeout: 30_000
+                }
             });
     
             // Создаем поток для записи данных
@@ -165,7 +169,7 @@ class ServerMonitorBot {
             } catch (error) {
                 console.error('Update error:', error);
             }
-        }, 120_000);
+        }, 10_000);
 
         // Обновление статуса
         setInterval(async () => {
@@ -180,7 +184,7 @@ class ServerMonitorBot {
             } catch (error) {
                 console.error('Status update error:', error);
             }
-        }, 120_000);
+        }, 10_000);
     }
 
     public async start(): Promise<void> {
