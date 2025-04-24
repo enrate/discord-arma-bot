@@ -1,9 +1,11 @@
+import 'dotenv/config'; // Добавьте эту строку ПЕРВОЙ
 import { Client, IntentsBitField, ActivityType, EmbedBuilder, Message } from 'discord.js';
 import { FTPResponse, Client as FTPClient } from 'basic-ftp';
 import { createReadStream, existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { PassThrough } from 'stream';
 import { TextChannel } from 'discord.js';
+
 
 interface FTPConfig {
     host: string;
