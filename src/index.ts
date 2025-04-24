@@ -78,7 +78,7 @@ class ServerMonitorBot {
     private async getPlayersFromFTP(): Promise<string[] | null> {
         const client = new FTPClient();
             // Настройка таймаутов и параметров
-    client.ftp.verbose = true; // Включить детальное логирование
+    // client.ftp.verbose = true; // Включить детальное логирование
     client.ftp.tlsOptions = {
         timeout: 30_000,
         rejectUnauthorized: false, // Отключает проверку сертификата
@@ -155,27 +155,23 @@ class ServerMonitorBot {
     private startUpdateTasks(): void {
         // Обновление списка игроков
         setInterval(async () => {
+            try{
+                const data = await this.getPlayersFromFTP(); 
             try {
                 const message = await this.getOrCreateMessage();
                 if (!message) return;
 
-                const players = await this.getPlayersFromFTP();
                 const embed = new EmbedBuilder()
-                    .setTitle(`Игроки онлайн (${players?.length || 0}/128)`)
-                    .setDescription(this.formatPlayers(players))
+                    .setTitle(`Игроки онлайн (${data?.length || 0}/128)`)
+                    .setDescription(this.formatPlayers(data))
                     .setColor(0x00FF00);
 
                 await message.edit({ content: null, embeds: [embed] });
             } catch (error) {
                 console.error('Update error:', error);
             }
-        }, 10_000);
-
-        // Обновление статуса
-        setInterval(async () => {
             try {
-                const players = await this.getPlayersFromFTP();
-                const count = players?.length || 0;
+                const count = data?.length || 0;
 
                 this.discordClient.user?.setActivity({
                     name: `${count}/128 | server 1 (1pp)`,
@@ -184,7 +180,10 @@ class ServerMonitorBot {
             } catch (error) {
                 console.error('Status update error:', error);
             }
-        }, 10_000);
+        } catch(error) {
+            console.error('get data from ftp error:', error);
+        }
+        }, 120_000);
     }
 
     public async start(): Promise<void> {
