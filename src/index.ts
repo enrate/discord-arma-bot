@@ -327,7 +327,7 @@ class ServerMonitorBot {
         } catch(error) {
             console.error('get data from ftp error:', error);
         }
-        }, 10_000);
+        }, 120_000);
     }
 
     public async start(): Promise<void> {
