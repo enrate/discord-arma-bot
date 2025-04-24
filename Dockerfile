@@ -1,17 +1,24 @@
-FROM python:3.11-slim
-
+# Stage 1: Build
+FROM node:20-alpine AS builder
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+COPY package*.json ./
+COPY tsconfig.json ./
+COPY src/ ./src/
 
-RUN pip install -U \
-    discord.py \
-    ftputil
+RUN npm ci
+RUN npm run build
 
-COPY main.py .
+# Stage 2: Runtime
+FROM node:20-alpine
+WORKDIR /app
 
-VOLUME /app/data  # Для сохранения ID сообщения
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/dist/ ./dist/
+COPY .env ./
 
-CMD ["python", "main.py"]
+RUN npm ci --only=production
+
+VOLUME /app/data
+
+CMD ["node", "dist/index.js"]
