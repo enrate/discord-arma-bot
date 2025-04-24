@@ -15,11 +15,14 @@ RUN npm run build
 FROM node:20-alpine
 WORKDIR /app
 
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/dist/ ./dist/
-COPY .env ./
+# Создаем директорию для данных и устанавливаем права
+RUN mkdir -p /app/data && chown -R node:node /app/data
 
-RUN npm ci --only=production
+COPY --from=builder --chown=node:node /app/package*.json ./
+COPY --from=builder --chown=node:node /app/dist/ ./dist/
+COPY --chown=node:node .env ./
+
+USER node
 
 VOLUME /app/data
 
