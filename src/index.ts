@@ -255,7 +255,7 @@ class ArmaBot {
                     .setDescription(players?.join('\n') || 'Сейчас никого нет')
                     .setColor(0x00FF00);
     
-                await message.edit({ embeds: [embed] });
+                await message.edit({ body: {data: {content: ''}}, embeds: [embed] });
             } catch (e) {
                 console.error('Player list update error:', e);
             }
