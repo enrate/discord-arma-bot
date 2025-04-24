@@ -130,7 +130,7 @@ class ServerMonitorBot {
         const client = new FTPClient();
         
         // Настройки для улучшения стабильности соединения
-        client.ftp.verbose = true;
+        // client.ftp.verbose = true;
         client.ftp.encoding = 'binary';
     
         try {
