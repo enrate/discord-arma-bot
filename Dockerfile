@@ -2,11 +2,13 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-COPY package*.json ./
+# Сначала копируем только файлы зависимостей
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Затем копируем остальные файлы
 COPY tsconfig.json ./
 COPY src/ ./src/
-
-RUN npm ci
 RUN npm run build
 
 # Stage 2: Runtime
