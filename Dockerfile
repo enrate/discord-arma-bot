@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Сначала копируем только файлы зависимостей
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --include=dev
 
 # Затем копируем остальные файлы
 COPY tsconfig.json ./
@@ -15,14 +15,11 @@ RUN npm run build
 FROM node:20-alpine
 WORKDIR /app
 
-# Создаем директорию для данных и устанавливаем права
-RUN mkdir -p /app/data && chown -R node:node /app/data
-
-COPY --from=builder --chown=node:node /app/package*.json ./
-COPY --from=builder --chown=node:node /app/dist/ ./dist/
-COPY --chown=node:node .env ./
-
-USER node
+# Копируем ВСЕ зависимости (включая dotenv)
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules/ ./node_modules/
+COPY --from=builder /app/dist/ ./dist/
+COPY .env ./
 
 VOLUME /app/data
 
