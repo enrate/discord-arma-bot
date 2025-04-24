@@ -87,8 +87,8 @@ class ServerMonitorBot(commands.Bot):
             
             await self.change_presence(
                 activity=discord.Activity(
-                    type=discord.ActivityType.watching,
-                    name=f"{count}/128 игроков"
+                    type=discord.ActivityType.playing,
+                    name=f"{count}/128 | server 1 (1pp)"
                 )
             )
         except Exception as e:
