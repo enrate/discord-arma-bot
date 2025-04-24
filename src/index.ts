@@ -78,7 +78,7 @@ class ServerMonitorBot {
     private async getPlayersFromFTP(): Promise<string[] | null> {
         const client = new FTPClient();
             // Настройка таймаутов и параметров
-    // client.ftp.verbose = true; // Включить детальное логирование
+    client.ftp.verbose = true; // Включить детальное логирование
     client.ftp.tlsOptions = {
         timeout: 30_000,
         rejectUnauthorized: false, // Отключает проверку сертификата
