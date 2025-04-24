@@ -20,15 +20,49 @@ class ServerMonitorBot(commands.Bot):
             "file_path": "/profiles/ArmaReforgerServer/profile/ServerAdminTools_Stats.json"
         }
         self.channel_id = int(os.getenv('CHANNEL_ID'))
-        self.status_message = None
+        self.status_message_id = None  # Храним только ID сообщения
+        self.message_file = "last_message.txt"
 
     async def setup_hook(self):
+        # Загружаем ID последнего сообщения при запуске
+        await self.load_last_message_id()
         self.update_status.start()
         self.update_player_list.start()
-        
+
+    async def load_last_message_id(self):
+        try:
+            with open(self.message_file, "r") as f:
+                self.status_message_id = int(f.read())
+        except (FileNotFoundError, ValueError):
+            self.status_message_id = None
+
+    async def save_last_message_id(self, message_id):
+        with open(self.message_file, "w") as f:
+            f.write(str(message_id))
+        self.status_message_id = message_id
+
+    async def get_or_create_message(self):
         channel = self.get_channel(self.channel_id)
-        if channel:
-            self.status_message = await channel.send("Инициализация...")
+        if not channel:
+            return None
+
+        try:
+            # Пытаемся получить существующее сообщение
+            if self.status_message_id:
+                return await channel.fetch_message(self.status_message_id)
+        except discord.NotFound:
+            # Сообщение было удалено - создаем новое
+            message = await channel.send("Инициализация...")
+            await self.save_last_message_id(message.id)
+            return message
+        except discord.Forbidden:
+            print("Нет прав доступа к сообщению")
+            return None
+
+        # Если сообщения нет - создаем новое
+        message = await channel.send("Инициализация...")
+        await self.save_last_message_id(message.id)
+        return message
 
     def get_players_from_ftp(self):
         try:
@@ -36,14 +70,12 @@ class ServerMonitorBot(commands.Bot):
                 ftp.connect(self.ftp_config["host"], self.ftp_config["port"])
                 ftp.login(self.ftp_config["user"], self.ftp_config["password"])
                 
-                # Скачиваем файл в память
                 data = BytesIO()
                 ftp.retrbinary(f"RETR {self.ftp_config['file_path']}", data.write)
                 data.seek(0)
                 
                 stats = json.load(data)
                 return list(stats["connected_players"].values())
-                
         except Exception as e:
             print(f"Ошибка FTP: {str(e)}")
             return None
@@ -51,6 +83,10 @@ class ServerMonitorBot(commands.Bot):
     @tasks.loop(minutes=2)
     async def update_player_list(self):
         try:
+            message = await self.get_or_create_message()
+            if not message:
+                return
+
             players = self.get_players_from_ftp()
             
             embed = discord.Embed(
@@ -59,11 +95,7 @@ class ServerMonitorBot(commands.Bot):
                 description=self.format_players(players)
             )
 
-            if self.status_message:
-                await self.status_message.edit(content="", embed=embed)
-            else:
-                channel = self.get_channel(self.channel_id)
-                self.status_message = await channel.send(embed=embed)
+            await message.edit(content="", embed=embed)
 
         except Exception as e:
             print(f"Ошибка обновления: {str(e)}")
