@@ -65,43 +65,58 @@ class ServerMonitorBot {
         }
     }
 
+    private async safeCloseClient(client: FTPClient): Promise<void> {
+        try {
+            if (!client.closed) { // Проверяем состояние соединения
+                await client.close();
+            }
+        } catch (closeError) {
+            console.error('Failed to close FTP connection:', closeError);
+        }
+    }
+    
     private async getPlayersFromFTP(): Promise<string[] | null> {
         const client = new FTPClient();
-        const bufferStream = new PassThrough();
-    let data = Buffer.from('');
-
+            // Настройка таймаутов и параметров
+    // client.ftp.verbose = true; // Включить детальное логирование
+    client.ftp.tlsOptions = {
+        rejectUnauthorized: false, // Отключает проверку сертификата
+        checkServerIdentity: () => undefined
+    };
         try {
+            // Подключаемся с конфигурацией
             await client.access({
                 host: this.ftpConfig.host,
-                port: this.ftpConfig.port,
                 user: this.ftpConfig.user,
                 password: this.ftpConfig.password,
+                port: this.ftpConfig.port,
                 secure: false
             });
-
-       // Собираем данные через stream
-       await client.downloadTo(bufferStream, this.ftpConfig.filePath);
-        
-       // Обрабатываем поток данных
-       return new Promise((resolve, reject) => {
-           bufferStream.on('data', (chunk: Buffer) => {
-               data = Buffer.concat([data, chunk]);
-           });
-           
-           bufferStream.on('end', () => {
-               const stats: ServerStats = JSON.parse(data.toString());
-               resolve(Object.values(stats.connected_players));
-           });
-           
-           bufferStream.on('error', reject);
-       });
-       
-   } catch (error) {
-       console.error('FTP Error:', error);
-       return null;
-   } finally {
-       client.close();
-   }
+    
+            // Создаем поток для записи данных
+            const bufferStream = new PassThrough();
+            
+            // Исправляем название метода (downloadTo вместо downloadToStream)
+            const downloadPromise = client.downloadTo(bufferStream, this.ftpConfig.filePath);
+            
+            // Собираем данные через Buffer
+            const chunks: Buffer[] = [];
+            for await (const chunk of bufferStream) {
+                chunks.push(chunk);
+            }
+            await downloadPromise; // Дожидаемся завершения загрузки
+    
+            const data = Buffer.concat(chunks).toString();
+            const stats: ServerStats = JSON.parse(data);
+            
+            return Object.values(stats.connected_players);
+            
+        } catch (error) {
+            console.error('FTP Operation Failed:', error instanceof Error ? error.message : error);
+            return null;
+        } finally {
+            await this.safeCloseClient(client);
+        }
     }
 
     private formatPlayers(players: string[] | null): string {
@@ -146,7 +161,7 @@ class ServerMonitorBot {
                     .setDescription(this.formatPlayers(players))
                     .setColor(0x00FF00);
 
-                await message.edit({ embeds: [embed] });
+                await message.edit({ content: null, embeds: [embed] });
             } catch (error) {
                 console.error('Update error:', error);
             }
