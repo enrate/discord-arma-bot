@@ -24,7 +24,7 @@ class ServerMonitorBot {
     private ftpConfig: FTPConfig;
     private channelId: string;
     private statusMessageId: string | null = null;
-    private readonly messageFile = process.env.local ? join(__dirname, 'last_message.txt') : '/app/data/last_message.txt';
+    private readonly messageFile = process.env?.local ? join(__dirname, 'last_message.txt') : '/app/data/last_message.txt';
 
     constructor() {
         this.discordClient = new Client({
