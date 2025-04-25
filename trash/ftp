@@ -1,0 +1,118 @@
+import { Client as FTPClient } from 'basic-ftp';
+import { PassThrough } from 'stream';
+
+
+    private async safeCloseClient(client: FTPClient): Promise<void> {
+        try {
+            if (!client.closed) { // Проверяем состояние соединения
+                await client.close();
+            }
+        } catch (closeError) {
+            console.error('Failed to close FTP connection:', closeError);
+        }
+    }
+
+    private async getFTPPlayers(): Promise<string[] | null> {
+        const client = new FTPClient();
+        
+        // Настройки для улучшения стабильности соединения
+        client.ftp.encoding = 'binary';
+    
+        try {
+            // Подключение с повторными попытками
+            await this.connectWithRetry(client, 3);
+            
+            // Загрузка файла с обработкой потока
+            const data = await this.downloadFileWithRetry(client);
+            
+            const stats: ServerStats = JSON.parse(data);
+            return Object.values(stats.connected_players);
+            
+        } catch (error) {
+            console.error('FTP Error:', this.formatFtpError(error));
+            return null;
+        } finally {
+            await this.safeCloseClient(client);
+        }
+    }
+    
+    private async connectWithRetry(client: FTPClient, attempts: number): Promise<void> {
+        for (let i = 1; i <= attempts; i++) {
+            try {
+                await client.access({
+                    host: this.config.ftp.host,
+                    port: this.config.ftp.port,
+                    user: this.config.ftp.user,
+                    password: this.config.ftp.password,
+                    secure: true,
+                    secureOptions: {
+                        rejectUnauthorized: false,
+                        sessionTimeout: 45000
+                    }
+                });
+                return;
+            } catch (error) {
+                if (i === attempts) throw error;
+                await this.delay(5000 * i);
+            }
+        }
+    }
+    
+    private async downloadFileWithRetry(client: FTPClient): Promise<string> {
+        const bufferStream = new PassThrough();
+        let chunks: Buffer[] = [];
+        
+        try {
+            const downloadPromise = client.downloadTo(bufferStream, this.config.ftp.filePath);
+            
+            // Собираем данные через событие 'data'
+            bufferStream.on('data', (chunk) => chunks.push(chunk));
+            
+            // Ожидаем завершение загрузки
+            await Promise.race([
+                downloadPromise,
+                this.timeout(60000)
+            ]);
+            
+            // Проверяем наличие данных
+            if (chunks.length === 0) {
+                throw new Error('No data received');
+            }
+            
+            return Buffer.concat(chunks).toString();
+            
+        } catch (error) {
+            // Повторная попытка при обрыве соединения
+            if (this.isConnectionError(error)) {
+                chunks = [];
+                return this.downloadFileWithRetry(client);
+            }
+            throw error;
+        }
+    }
+    
+    // Вспомогательные методы
+    private delay(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    
+    private timeout(ms: number): Promise<never> {
+        return new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Operation timeout')), ms));
+    }
+    
+    private isConnectionError(error: unknown): boolean {
+        return error instanceof Error && (
+            error.message.includes('ECONNRESET') ||
+            error.message.includes('ETIMEDOUT') ||
+            error.message.includes('Timeout')
+        );
+    }
+    
+    private formatFtpError(error: unknown): string {
+        if (!(error instanceof Error)) return 'Unknown error';
+        
+        return `[${new Date().toISOString()}] FTP Error: ${error.message}\n${
+            error.stack?.replace('Error: ', '') || 'No stack trace'
+        }`;
+    }
