@@ -171,13 +171,6 @@ private hasChannelPermissions(channel: TextChannel): boolean {
 
 // Конфигурация
 const config: ServerConfig = {
-    ftp: {
-        host: process.env.FTP_HOST!,
-        port: parseInt(process.env.FTP_PORT || '21'),
-        user: process.env.FTP_USER!,
-        password: process.env.FTP_PASSWORD!,
-        filePath: '/profiles/ArmaReforgerServer/profile/ServerAdminTools_Stats.json'
-    },
     a2s: {
         ip: process.env.SERVER_IP!,
         port: parseInt(process.env.SERVER_PORT || '2005')
