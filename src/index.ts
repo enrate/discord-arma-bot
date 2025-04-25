@@ -39,6 +39,7 @@ class ArmaBot {
             if (!channel) return;
 
             await PlayersStats.initialize(channel);
+            console.log('kekwsss')
         } catch (error) {
             console.error('Ошибка настройки канала статистики:', error);
         }
