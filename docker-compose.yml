@@ -8,12 +8,12 @@ services:
     environment:
       - DISCORD_TOKEN=${DISCORD_TOKEN}
       - CHANNEL_ID=${CHANNEL_ID}
-      - FTP_HOST=${FTP_HOST}
-      - FTP_PORT=${FTP_PORT}
-      - FTP_USER=${FTP_USER}
-      - FTP_PASSWORD=${FTP_PASSWORD}
       - SERVER_IP=${SERVER_IP}
       - SERVER_PORT=${SERVER_PORT}
+      - RCON_PORT=${RCON_PORT}
+      - RCON_PASSWORD=${RCON_PASSWORD}
+      - REPORTS_CHANNEL=${REPORTS_CHANNEL}
+      - FORM_CHANNEL_ID=${FORM_CHANNEL_ID}
     volumes:
       - arma-bot-data:/app/data
 
