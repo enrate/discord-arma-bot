@@ -1,6 +1,6 @@
-// Добавить в класс BanForms или создать новый класс StatsHandler
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, TextChannel, ModalSubmitInteraction, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import {pool} from '../db'; // Убраны фигурные скобки
+import { RowDataPacket } from 'mysql2';
 
 export class PlayersStats {
     private static readonly STATS_TIMEOUT = 60000; // 1 минута
@@ -19,7 +19,7 @@ export class PlayersStats {
             const row = new ActionRowBuilder<ButtonBuilder>()
                 .addComponents(
                     new ButtonBuilder()
-                        .setCustomId('show_stats')
+                        .setCustomId('open_stats_form')
                         .setLabel('Показать статистику')
                         .setStyle(ButtonStyle.Primary)
                 );
@@ -62,43 +62,47 @@ export class PlayersStats {
     }
 
     public static async handleStatsRequest(interaction: ModalSubmitInteraction) {
-        const playerName = interaction.fields.getTextInputValue('player_name');
-        
         try {
+            await interaction.deferReply({ ephemeral: true });
+            
+            const playerName = interaction.fields.getTextInputValue('player_name');
             const connection = await pool.getConnection();
-            let stats;
             
             try {
-                [stats] = await connection.query(
+                const [rows] = await connection.query<RowDataPacket[]>(
                     `SELECT * FROM player_connections 
                     WHERE player_name = ? 
                     ORDER BY timestamp_last_connection DESC 
                     LIMIT 1`,
                     [playerName]
                 );
-                console.log(stats)
+                console.log(rows)
+    
+                if (rows.length === 0) {
+                    throw new Error('Игрок не найден');
+                }
+    
+                const embed = this.createStatsEmbed(playerName, rows[0]);
+                await interaction.editReply({ embeds: [embed] });
+    
             } finally {
                 connection.release();
             }
-
-            const embed = this.createStatsEmbed(playerName, stats);
-            const reply = await interaction.reply({ 
-                embeds: [embed], 
-                fetchReply: true 
-            });
-
-            // Удаление через минуту
-            setTimeout(() => reply.delete().catch(console.error), this.STATS_TIMEOUT);
-
+    
         } catch (error) {
             console.error('Ошибка поиска:', error);
-            const reply = await interaction.reply({
-                content: `❌ Игрок "${playerName}" не найден`,
-                ephemeral: true
+            await interaction.editReply({
+                content: `❌ Ошибка: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`
             });
-            
-            setTimeout(() => reply.delete().catch(console.error), this.STATS_TIMEOUT);
         }
+        
+        setTimeout(async () => {
+            try {
+                await interaction.deleteReply();
+            } catch(e) {
+                console.error('Ошибка удаления ответа:', e);
+            }
+        }, 60000);
     }
 
     private static createStatsEmbed(playerName: string, data: any): EmbedBuilder {
