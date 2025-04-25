@@ -2,6 +2,7 @@ import * as readline from 'readline';
 import { readCfg, Socket } from '@senfo/battleye';
 import { parsePlayersData } from './helper';
 import { Player } from './types';
+import dayjs from 'dayjs';
 
 export class Rcon {
     private socket: Socket;
@@ -56,7 +57,7 @@ export class Rcon {
         });
 
         this.connection.on('message', (message: any, packet: any) => {
-            console.log(`message: ${this.connection.ip}:${this.connection.port} => message: ${message}`);
+            console.log(`[${dayjs().format('DD.MM.YYYY (HH:mm:ss)')}] message: ${this.connection.ip}:${this.connection.port} => message: ${message}`);
         });
 
         this.connection.on('disconnected', (reason: any) => {
