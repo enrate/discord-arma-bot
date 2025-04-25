@@ -1,6 +1,6 @@
 // Добавить в класс BanForms или создать новый класс StatsHandler
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, TextChannel, ModalSubmitInteraction, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-const pool = require('../db');
+import {pool} from '../db'; // Убраны фигурные скобки
 
 export class PlayersStats {
     private static readonly STATS_TIMEOUT = 60000; // 1 минута
@@ -55,11 +55,12 @@ export class PlayersStats {
                     LIMIT 1`,
                     [playerName]
                 );
+                console.log(stats)
             } finally {
                 connection.release();
             }
 
-            const embed = this.createStatsEmbed(playerName, stats[0]);
+            const embed = this.createStatsEmbed(playerName, stats);
             const reply = await interaction.reply({ 
                 embeds: [embed], 
                 fetchReply: true 
