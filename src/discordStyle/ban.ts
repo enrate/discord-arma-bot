@@ -124,17 +124,17 @@ export class BanForms {
         data: any
     ) {
         try {
-            // Отправляем ответ инициатору
-            await interaction.reply({ 
-                content: '✅ Успешно!',
-                components: []
-            });
-
             // Создаем embed
             const embed = this.createReportEmbed(interaction, type, data);
 
             // Отправляем в reports-канал
             await this.sendToReportsChannel(interaction, embed);
+
+            // Отправляем ответ инициатору
+            await interaction.reply({ 
+                content: '✅ Успешно!',
+                components: []
+            });
 
 
         } catch (error) {
