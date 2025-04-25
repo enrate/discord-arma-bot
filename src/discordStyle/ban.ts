@@ -118,6 +118,19 @@ export class BanForms {
         }
     }
 
+    // private static setupAutoDelete(interaction: ModalSubmitInteraction) {
+    //     setTimeout(async () => {
+    //         try {
+    //             // Проверяем существование ответа
+    //             if (interaction.replied || interaction.deferred) {
+    //                 await interaction.deleteReply();
+    //             }
+    //         } catch(e) { 
+    //             console.error('Ошибка очистки:', e); 
+    //         }
+    //     }, 5000);
+    // }
+
     private static async sendSuccessResponse(
         interaction: ModalSubmitInteraction,
         type: 'ban' | 'unban',
@@ -129,6 +142,7 @@ export class BanForms {
 
             // Отправляем в reports-канал
             await this.sendToReportsChannel(interaction, embed);
+
             if(type == 'ban'){
                 await this.sendToGlobalReportsChannel(interaction, embed);
             }
