@@ -1,6 +1,6 @@
 // Добавить в класс BanForms или создать новый класс StatsHandler
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, TextChannel, ModalSubmitInteraction, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-const pool = require('./db');
+const pool = require('../db');
 
 export class PlayersStats {
     private static readonly STATS_TIMEOUT = 60000; // 1 минута
