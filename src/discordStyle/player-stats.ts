@@ -1,6 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, TextChannel, ModalSubmitInteraction, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import {pool} from '../db'; // Убраны фигурные скобки
 import { RowDataPacket } from 'mysql2';
+import dayjs from 'dayjs';
 
 export class PlayersStats {
     private static readonly STATS_TIMEOUT = 60000; // 1 минута
@@ -110,8 +111,8 @@ export class PlayersStats {
             .setTitle(`Статистика игрока: ${playerName}`)
             .addFields(
                 { name: 'ID игрока', value: data.player_id || 'Неизвестно' },
-                { name: 'Первое подключение', value: data.timestamp_first_connection || 'Нет данных' },
-                { name: 'Последнее подключение', value: data.timestamp_last_connection || 'Нет данных' }
+                { name: 'Первое подключение', value: dayjs(data.timestamp_first_connection).format("HH.mm.ss | DD.MM.YYYY") || 'Нет данных' },
+                { name: 'Последнее подключение', value: dayjs(data.timestamp_last_connection).format("HH.mm.ss | DD.MM.YYYY") || 'Нет данных' }
             )
             .setColor(0x0099FF)
             .setTimestamp();
