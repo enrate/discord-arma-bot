@@ -20,3 +20,9 @@ export interface ServerConfig {
 export interface ServerStats {
     connected_players: Record<string, string>;
 }
+
+export interface Player {
+    number: number;
+    uid: string;
+    name: string;
+  }

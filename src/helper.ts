@@ -1,8 +1,5 @@
-interface Player {
-    number: number;
-    uid: string;
-    name: string;
-  }
+import { Player } from './types';
+
   
   export const parsePlayersData = (message: string): Player[] => {
     return message

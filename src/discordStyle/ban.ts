@@ -1,4 +1,4 @@
-import { ModalBuilder, TextInputBuilder, ActionRowBuilder, TextInputStyle, ModalSubmitInteraction } from 'discord.js';
+import { ModalBuilder, TextInputBuilder, ActionRowBuilder, TextInputStyle, ModalSubmitInteraction, TextChannel } from 'discord.js';
 import { rconClient } from "../rcon";
 import { EmbedBuilder } from 'discord.js';
 
@@ -87,7 +87,7 @@ export class BanForms {
 
             const timeNumber = parseInt(ban_time);
             if (isNaN(timeNumber)) {
-                await interaction.reply({ content: '❌ Время бана должно быть числом!', ephemeral: true });
+                await interaction.reply({ content: '❌ Время бана должно быть числом!'});
                 return;
             }
 
@@ -98,7 +98,6 @@ export class BanForms {
             console.error('Ошибка бана:', error);
             await interaction.reply({ 
                 content: `❌ Ошибка бана: ${error instanceof Error ? error.message : 'Unknown error'}`,
-                ephemeral: true 
             });
         }
     }
@@ -115,7 +114,6 @@ export class BanForms {
             console.error('Ошибка разбана:', error);
             await interaction.reply({ 
                 content: `❌ Ошибка разбана: ${error instanceof Error ? error.message : 'Unknown error'}`,
-                ephemeral: true 
             });
         }
     }
@@ -125,17 +123,45 @@ export class BanForms {
         type: 'ban' | 'unban',
         data: any
     ) {
-        await interaction.reply({ 
-            content: '✅ Успешно!',
-            components: [],
-            ephemeral: true
-        });
+        try {
+            // Отправляем ответ инициатору
+            await interaction.reply({ 
+                content: '✅ Успешно!',
+                components: []
+            });
 
+            // Создаем embed
+            const embed = this.createReportEmbed(interaction, type, data);
+
+            // Отправляем в reports-канал
+            await this.sendToReportsChannel(interaction, embed);
+
+
+        } catch (error) {
+            console.error('Ошибка отправки ответа:', error);
+        }
+
+        // Автоочистка через 5 секунд
+        setTimeout(async () => {
+            try { 
+                await interaction.deleteReply(); 
+            } catch(e) { 
+                console.error('Ошибка очистки:', e); 
+            }
+        }, 5000);
+    }
+
+    private static createReportEmbed(
+        interaction: ModalSubmitInteraction,
+        type: 'ban' | 'unban',
+        data: any
+    ): EmbedBuilder {
         const embed = new EmbedBuilder()
             .setAuthor({
                 name: interaction.user.tag,
                 iconURL: interaction.user.displayAvatarURL()
-            });
+            })
+            .setTimestamp();
 
         if (type === 'ban') {
             embed.setTitle('Блокировка')
@@ -154,11 +180,33 @@ export class BanForms {
                 .setColor(0x00FF00);
         }
 
-        await interaction.followUp({ embeds: [embed], ephemeral: true });
-        
-        setTimeout(async () => {
-            try { await interaction.deleteReply(); } 
-            catch(e) { console.error('Delete error:', e); }
-        }, 5000);
+        return embed;
+    }
+
+    private static async sendToReportsChannel(
+        interaction: ModalSubmitInteraction, 
+        embed: EmbedBuilder
+    ) {
+        try {
+            const reportsChannelId = process.env.REPORTS_CHANNEL;
+
+            if (!reportsChannelId) {
+                throw new Error('REPORTS_CHANNEL не настроен в .env');
+            }
+
+            const channel = await interaction.client.channels.fetch(reportsChannelId) as TextChannel;
+            
+            if (!channel?.isTextBased()) {
+                throw new Error('Канал для отчетов не найден или не текстовый');
+            }
+
+            await channel.send({ 
+                embeds: [embed],
+            });
+            
+        } catch (error) {
+            console.error('Ошибка отправки в reports-канал:', error);
+            throw error;
+        }
     }
 }

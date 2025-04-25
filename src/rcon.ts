@@ -1,6 +1,7 @@
 import * as readline from 'readline';
 import { readCfg, Socket } from '@senfo/battleye';
 import { parsePlayersData } from './helper';
+import { Player } from './types';
 
 export class Rcon {
     private socket: Socket;
@@ -94,8 +95,8 @@ export class Rcon {
         return this.connection.disconnect();
     }
 
-    public async getPlayersWithTimeout(): Promise<string> {
-        return new Promise((resolve, reject) => {
+    public async getPlayers(): Promise<Array<Player>> {
+        const players = await new Promise<string>((resolve, reject) => {
             const timer = setTimeout(() => {
                 reject(new Error('Timeout getting players'));
             }, 15000);
@@ -111,6 +112,7 @@ export class Rcon {
             this.connection.on('message', handler);
             this.sendCommand("#players").catch(reject);
         });
+        return parsePlayersData(players)
     }
     public async kickPlayer(playerId:number) {
         await this.sendCommand(`#kick ${playerId}`)
@@ -133,8 +135,7 @@ export class Rcon {
             this.connection.on('message', handler);
             this.sendCommand(`#ban create ${playerUID} ${timeInHours*3600} ${reason}`).catch(reject);
         }).then(async () => {
-            const parsedPlayers = parsePlayersData(await rconClient.getPlayersWithTimeout())
-        const scopePlayer = parsedPlayers.find((player) => player.uid === playerUID)
+        const scopePlayer = (await rconClient.getPlayers()).find((player) => player.uid === playerUID)
         if(scopePlayer) {
             await rconClient.kickPlayer(scopePlayer.number)
         }
@@ -164,7 +165,7 @@ export class Rcon {
 // Пример использования
 export const rconClient = new Rcon({
     name: 'server1',
-    password: 'sxJhPSk6EMrQKFqj',
-    ip: '195.18.27.162',
-    port: 2004
+    password: process.env.RCON_PASSWORD!,
+    ip: process.env.SERVER_IP!,
+    port: Number(process.env.RCON_PORT)!
 });

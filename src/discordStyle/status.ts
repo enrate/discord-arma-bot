@@ -15,7 +15,7 @@ export class StatusManager {
             console.log = originalConsoleLog;
             console.error = originalConsoleError;
 
-            await client.user?.setActivity({
+            client.user?.setActivity({
                 name: `${serverInfo.players}/${serverInfo.maxPlayers} | Server 1 (1pp)`,
                 type: ActivityType.Playing
             });

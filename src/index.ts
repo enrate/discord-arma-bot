@@ -1,8 +1,6 @@
 import 'dotenv/config';
-import { Client, IntentsBitField, ActionRowBuilder, ButtonBuilder, ButtonStyle, InteractionType  } from 'discord.js';
+import { Client, Message, IntentsBitField, ActionRowBuilder, ButtonBuilder, ButtonStyle, InteractionType, ComponentType, PermissionFlagsBits  } from 'discord.js';
 import { TextChannel } from 'discord.js';
-import { existsSync, readFileSync } from 'fs';
-import { join } from 'path';
 import { BanForms } from './discordStyle/ban';
 import { ServerConfig } from './types';
 import { PlayersManager } from './discordStyle/players-list';
@@ -11,8 +9,6 @@ import { StatusManager } from './discordStyle/status';
 class ArmaBot {
     private discordClient: Client;
     private config: ServerConfig;
-    private statusMessageId: string | null = null;
-    private readonly messageFile = join(__dirname,'../data', 'last_message.txt');
 
     constructor(config: ServerConfig) {
         this.config = config;
@@ -20,7 +16,6 @@ class ArmaBot {
             intents: [IntentsBitField.Flags.Guilds, IntentsBitField.Flags.GuildMessages]
             
         });
-        this.loadMessageId();
     }
     
     public async start() {
@@ -43,23 +38,8 @@ class ArmaBot {
     }
 
     private async updatePlayerList() {
-        await PlayersManager.update(
-            this.discordClient,
-            this.config.discord.channelId,
-            this.statusMessageId,
-            this.messageFile
-        );
+        await PlayersManager.update(this.discordClient, this.config.discord.channelId);
     }
-
-        private loadMessageId() {
-            try {
-                if (existsSync(this.messageFile)) {
-                    this.statusMessageId = readFileSync(this.messageFile, 'utf-8');
-                }
-            } catch (error) {
-                console.error('Error loading message ID:', error);
-            }
-        }
 
     private startUpdateLoop() {
         // Обновление статуса каждую минуту
@@ -74,38 +54,88 @@ class ArmaBot {
         ]).catch(console.error);
     }
 
-    private originalFormComponents: ActionRowBuilder<any>[] = [];
+    private readonly FORM_CONTENT = '**Система банов**';
 
-    private async sendInputForm() {
-        try {
-            const channel = await this.discordClient.channels.fetch('1365138437795090534') as TextChannel;
-            if (!channel) return;
-
-            const actionRow = new ActionRowBuilder<ButtonBuilder>()
-                .addComponents([
-                    new ButtonBuilder()
-                        .setCustomId('open_ban_form')
-                        .setLabel('Выдать бан')
-                        .setStyle(ButtonStyle.Danger),
-                        new ButtonBuilder()
-                        .setCustomId('open_unban_form')
-                        .setLabel('Снять бан')
-                        .setStyle(ButtonStyle.Primary)
-                ]
-                );
-
-                this.originalFormComponents = [actionRow];
-
-            await channel.send({
-                content: '**Система банов**',
-                components: this.originalFormComponents 
-            });
-
-            this.setupFormHandlers();
-        } catch (error) {
-            console.error('Ошибка отправки формы:', error);
+private async sendInputForm() {
+    try {
+        const channel = await this.discordClient.channels.fetch(process.env.FORM_CHANNEL_ID!) as TextChannel;
+        if (!channel) {
+            console.error('Канал для формы не найден');
+            return;
         }
+
+        // Проверка прав бота в канале
+        if (!this.hasChannelPermissions(channel)) {
+            console.error('Недостаточно прав в канале');
+            return;
+        }
+
+        const actionRow = this.createFormButtons();
+        const existingMessage = await this.findFormMessage(channel);
+
+        try {
+            if (existingMessage) {
+                await existingMessage.edit({
+                    content: this.FORM_CONTENT,
+                    components: [actionRow]
+                });
+            } else {
+                await channel.send({
+                    content: this.FORM_CONTENT,
+                    components: [actionRow]
+                });
+            }
+        } catch (error) {
+            console.error('Ошибка обновления формы:', error);
+            return;
+        }
+
+        this.setupFormHandlers();
+    } catch (error) {
+        console.error('Общая ошибка работы с формой:', error);
     }
+}
+
+private createFormButtons(): ActionRowBuilder<ButtonBuilder> {
+    return new ActionRowBuilder<ButtonBuilder>().addComponents([
+        new ButtonBuilder()
+            .setCustomId('open_ban_form')
+            .setLabel('Выдать бан')
+            .setStyle(ButtonStyle.Danger),
+        new ButtonBuilder()
+            .setCustomId('open_unban_form')
+            .setLabel('Снять бан')
+            .setStyle(ButtonStyle.Primary)
+    ]);
+}
+
+private async findFormMessage(channel: TextChannel): Promise<Message | null> {
+    try {
+        const messages = await channel.messages.fetch({ limit: 20 });
+        return messages.find(msg => 
+            msg.author.id === this.discordClient.user?.id &&
+            msg.content === this.FORM_CONTENT &&
+            msg.components.some(c => 
+                c.components.some(b => 
+                    b.type === ComponentType.Button && 
+                    ['open_ban_form', 'open_unban_form'].includes(b.customId || '')
+                )
+            )
+        ) || null;
+    } catch (error) {
+        console.error('Ошибка поиска формы:', error);
+        return null;
+    }
+}
+
+private hasChannelPermissions(channel: TextChannel): boolean {
+    const permissions = channel.guild.members.me?.permissionsIn(channel);
+    return !!permissions?.has([
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.SendMessages,
+        PermissionFlagsBits.ManageMessages
+    ]);
+}
 
     private setupFormHandlers() {
         this.discordClient.on('interactionCreate', async interaction => {

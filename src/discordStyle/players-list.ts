@@ -1,61 +1,62 @@
-import { EmbedBuilder, TextChannel, Client } from 'discord.js';
+import { EmbedBuilder, TextChannel, Client, Message } from 'discord.js';
 import { rconClient } from '../rcon';
-import { writeFileSync } from 'fs';
-import { parsePlayersData } from '../helper';
-
 
 export class PlayersManager {
-    static async update(
-        client: Client,
-        channelId: string,
-        lastMessageId: string | null,
-        messageFile: string
-    ) {
+    private static readonly EMBED_TITLE = 'Игроки онлайн';
+
+    static async update(client: Client, channelId: string) {
         try {
             const channel = await client.channels.fetch(channelId) as TextChannel;
-            if (!channel) return;
+            if (!channel) {
+                console.error(`Канал ${channelId} не найден`);
+                return;
+            }
 
-            const message = await this.getOrCreateMessage(channel, lastMessageId, messageFile);
-            if (!message) return;
+            let message = await this.findLastBotMessage(channel);
+            
+            // Если сообщение не найдено - создаем новое
+            if (!message) {
+                message = await this.createNewMessage(channel);
+                if (!message) return;
+            }
 
-            const players = parsePlayersData(await rconClient.getPlayersWithTimeout()).filter((player) => player.name);
+            const players = (await rconClient.getPlayers())
+                .map(p => p.name)
+                .filter(name => name && name.trim());
+
             const embed = new EmbedBuilder()
-                .setTitle('Игроки онлайн')
-                .setDescription(players?.join('\n') || 'Сейчас никого нет')
+                .setTitle(this.EMBED_TITLE)
+                .setDescription(players.length > 0 ? players.join('\n') : 'Сейчас никого нет')
                 .setColor(0x00FF00);
 
-            await message.edit({ content: '', embeds: [embed] });
+            await message.edit({ embeds: [embed] });
+
         } catch (e) {
             console.error('Player list update error:', e);
         }
     }
 
-    private static async getOrCreateMessage(
-        channel: TextChannel,
-        messageId: string | null,
-        messageFile: string
-    ) {
-        if (!messageId) {
-            const message = await channel.send('Инициализация...');
-            this.saveMessageId(messageFile, message.id);
-            return message;
-        }
-
+    private static async findLastBotMessage(channel: TextChannel): Promise<Message | null> {
         try {
-            return await channel.messages.fetch(messageId);
+            const messages = await channel.messages.fetch({ limit: 10 });
+            return messages.find(msg => 
+                msg.author.id === channel.client.user?.id &&
+                msg.embeds[0]?.title === this.EMBED_TITLE
+            ) || null;
         } catch (error) {
-            console.log('Message not found, creating new one');
-            const message = await channel.send('Инициализация...');
-            this.saveMessageId(messageFile, message.id);
-            return message;
+            console.error('Error finding message:', error);
+            return null;
         }
     }
 
-    private static saveMessageId(filePath: string, messageId: string) {
+    private static async createNewMessage(channel: TextChannel): Promise<Message | null> {
         try {
-            writeFileSync(filePath, messageId);
+            return await channel.send({ 
+                embeds: [new EmbedBuilder().setTitle(this.EMBED_TITLE)]
+            });
         } catch (error) {
-            console.error('Error saving message ID:', error);
+            console.error('Error creating new message:', error);
+            return null;
         }
     }
 }
