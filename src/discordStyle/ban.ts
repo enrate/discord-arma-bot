@@ -129,6 +129,9 @@ export class BanForms {
 
             // Отправляем в reports-канал
             await this.sendToReportsChannel(interaction, embed);
+            if(type == 'ban'){
+                await this.sendToGlobalReportsChannel(interaction, embed);
+            }
 
             // Отправляем ответ инициатору
             await interaction.reply({ 
@@ -206,6 +209,32 @@ export class BanForms {
             
         } catch (error) {
             console.error('Ошибка отправки в reports-канал:', error);
+            throw error;
+        }
+    }
+    private static async sendToGlobalReportsChannel(
+        interaction: ModalSubmitInteraction, 
+        embed: EmbedBuilder
+    ) {
+        try {
+            const globalReportsChannelId = process.env.GLOBAL_REPORTS_CHANNEL;
+
+            if (!globalReportsChannelId) {
+                throw new Error('GLOBAL_REPORTS_CHANNEL не настроен в .env');
+            }
+
+            const channel = await interaction.client.channels.fetch(globalReportsChannelId) as TextChannel;
+            
+            if (!channel?.isTextBased()) {
+                throw new Error('Канал для отчетов не найден или не текстовый');
+            }
+
+            await channel.send({ 
+                embeds: [embed],
+            });
+            
+        } catch (error) {
+            console.error('Ошибка отправки в GLOBAL_reports-канал:', error);
             throw error;
         }
     }
