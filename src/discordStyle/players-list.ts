@@ -1,6 +1,6 @@
-import { EmbedBuilder, TextChannel, Message, Client } from 'discord.js';
+import { EmbedBuilder, TextChannel, Client } from 'discord.js';
 import { rconClient } from '../rcon';
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { writeFileSync } from 'fs';
 import { parsePlayersData } from '../helper';
 
 
@@ -18,7 +18,7 @@ export class PlayersManager {
             const message = await this.getOrCreateMessage(channel, lastMessageId, messageFile);
             if (!message) return;
 
-            const players = parsePlayersData(await rconClient.getPlayersWithTimeout());
+            const players = parsePlayersData(await rconClient.getPlayersWithTimeout()).filter((player) => player.name);
             const embed = new EmbedBuilder()
                 .setTitle('Игроки онлайн')
                 .setDescription(players?.join('\n') || 'Сейчас никого нет')
