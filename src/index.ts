@@ -34,12 +34,18 @@ class ArmaBot {
 
     private async setupStatsChannel() {
         try {
-            console.log(process.env.STATS_CHANNEL_ID)
-            const channel = await this.discordClient.channels.fetch(process.env.STATS_CHANNEL_ID!) as TextChannel;
-            if (!channel) return;
+            if (!this.discordClient) {
+                throw new Error('Discord клиент не инициализирован');
+            }
+
+            const channel = await this.discordClient.channels.fetch(process.env.STATS_CHANNEL_ID!);
+
+            if (!(channel instanceof TextChannel)) {
+                throw new Error('Канал статистики не найден или не является текстовым');
+            }
 
             await PlayersStats.initialize(channel);
-            console.log('kekwsss')
+            console.log('Канал статистики успешно настроен');
         } catch (error) {
             console.error('Ошибка настройки канала статистики:', error);
         }

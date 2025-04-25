@@ -5,24 +5,45 @@ import {pool} from '../db'; // Убраны фигурные скобки
 export class PlayersStats {
     private static readonly STATS_TIMEOUT = 60000; // 1 минута
 
-    public static async initialize(client: any) {
-        const channel = await client.channels.fetch(process.env.STATS_CHANNEL_ID) as TextChannel;
-        if (!channel) return;
+    public static async initialize(channel: TextChannel) {
+        try {
+            // Проверяем доступность канала
+            if (!channel.isTextBased()) {
+                throw new Error('Канал не является текстовым');
+            }
 
-        // Создаем кнопку для вызова формы
-        const row = new ActionRowBuilder<ButtonBuilder>()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('open_stats_form')
-                    .setLabel('Поиск статистики')
-                    .setStyle(ButtonStyle.Primary)
-            );
+            // Очищаем предыдущие сообщения бота
+            await this.cleanupChannel(channel);
 
-        // Отправляем сообщение с кнопкой
-        await channel.send({ 
-            content: '**Поиск статистики игрока**',
-            components: [row] 
-        });
+            // Создаем кнопку
+            const row = new ActionRowBuilder<ButtonBuilder>()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('show_stats')
+                        .setLabel('Показать статистику')
+                        .setStyle(ButtonStyle.Primary)
+                );
+
+            // Отправляем сообщение с кнопкой
+            await channel.send({
+                content: '**Получить статистику игрока**',
+                components: [row]
+            });
+            
+        } catch (error) {
+            console.error('Ошибка инициализации канала статистики:', error);
+            throw error;
+        }
+    }
+    private static async cleanupChannel(channel: TextChannel) {
+        try {
+            const messages = await channel.messages.fetch({ limit: 100 });
+            const botMessages = messages.filter(msg => msg.author.id === channel.client.user?.id);
+            
+            await Promise.all(botMessages.map(msg => msg.delete()));
+        } catch (error) {
+            console.error('Ошибка очистки канала:', error);
+        }
     }
 
     public static createStatsModal() {
