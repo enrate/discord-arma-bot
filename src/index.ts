@@ -9,6 +9,33 @@ import nodea2s from 'node-a2s';
 import * as readline from 'readline'
 import { readCfg, Socket } from '@senfo/battleye'
 
+
+function parsePlayersData(message: string) {
+    const players = [];
+    // Разделяем сообщение на строки
+    const lines = message.split('\n');
+    
+    // Проходим по всем строкам
+    for (const line of lines) {
+      // Пропускаем заголовок и пустые строки
+      if (line.startsWith('Players on server') || line.trim() === '') continue;
+      
+      // Разделяем строку на компоненты
+      const parts = line.split(';').map(part => part.trim());
+      
+      // Проверяем корректность данных
+      if (parts.length === 3 && !isNaN(parseInt(parts[0]))) {
+        players.push({
+          number: parseInt(parts[0]),
+          uid: parts[1],
+          name: parts[2]
+        });
+      }
+    }
+    
+    return players;
+  }
+
 interface ServerConfig {
     ftp: {
         host: string;
@@ -516,6 +543,29 @@ class ArmaBot {
 
         await banConfirmation;
 
+        const playersList = await connection.command("#players")
+    .then(async () => {
+        return new Promise<string>((resolve, reject) => { // Изменили тип на string
+            const timeout = setTimeout(() => {
+                reject(new Error('Не удалось получить список игроков'));
+            }, 15000);
+
+            const messageHandler = (message: string) => {
+                if (message.startsWith('Players on server')) {
+                    clearTimeout(timeout);
+                    connection.off('message', messageHandler);
+                    resolve(message); // Возвращаем содержимое сообщения
+                }
+            };
+
+            connection.on('message', messageHandler);
+        });
+    });
+    const parsedPlayers = parsePlayersData(playersList);
+    const scopePlayer = parsedPlayers.find((player) => player.uid === ban_id)
+    if(scopePlayer) {
+        await connection.command(`#kick ${scopePlayer.number}`)
+    }
               await interaction.reply({ 
                   content: '✅ Успешно!',
                   components: [],
@@ -548,7 +598,7 @@ class ArmaBot {
                             { name: 'Время', value: `${ban_time} часов` },
                             { name: 'Причина', value: ban_reason }
                         )
-                        .setColor(0x00ff00)
+                        .setColor(0x00FF0000)
                     ]
                 });
             }
