@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@sapphire/snowflake": "^3.5.5",
+    "@senfo/battleye": "^2.2.2",
     "a2s": "^1.0.2",
     "basic-ftp": "^5.0.5",
     "child-process-promise": "^2.2.1",
