@@ -34,10 +34,8 @@ class ArmaBot {
 
     private async setupStatsChannel() {
         try {
-            const channelId = process.env.STATS_CHANNEL_ID;
-            if (!channelId) throw new Error('STATS_CHANNEL_ID not configured');
-            
-            const channel = await this.discordClient.channels.fetch(channelId) as TextChannel;
+            console.log(process.env.STATS_CHANNEL_ID)
+            const channel = await this.discordClient.channels.fetch(process.env.STATS_CHANNEL_ID!) as TextChannel;
             if (!channel) return;
 
             await PlayersStats.initialize(channel);
