@@ -282,7 +282,7 @@ ctx.restore();
             { title: 'Deaths:', value: data.stats.deaths },
             { title: 'Suicides:', value: data.stats.suicide },
             { title: 'Team kills:', value: data.stats.teamkills },
-            { title: 'TOP №:', value: data.stats.playedTime < 60 ? "To display you need to have more than 1 hour of active play" : data.stats.top },
+            { title: 'TOP №:', value: data.stats.playedTime < 60 ? "Played time > 1 hour" : data.stats.top },
             { title: 'Played time:', value: `${hours} hours ${data.stats.playedTime-hours*60} minutes` },
             { title: 'First connect:', value: dayjs(data.connection.timestamp_first_connection).add(3, 'hour').format("DD.MM.YYYY HH:mm") },
             { title: 'Last connect:', value: dayjs(data.connection.timestamp_last_connection).add(3, 'hour').format("DD.MM.YYYY HH:mm") }
@@ -303,7 +303,7 @@ ctx.restore();
             ctx.stroke();
 
             
-            if (data.stats.top <= 3) {
+            if (data.stats.top <= 3 && data.stats.top !== 0) {
                 const medal = await loadImage(path.join(imagesDir, data.stats.top == 1 ? 'first-icon.png' : data.stats.top == 2 ? 'second-icon.png' : 'third-icon.png'));
                 ctx.drawImage(medal, centerX + 200, 30, 200, 200);
             }
