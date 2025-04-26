@@ -33,11 +33,12 @@ export class PlayersManager {
                 .map(p => p.name)
                 .filter(name => name && name.trim());
 
+                // Сравниваем с предыдущим списком
+                await this.processDisconnectedPlayers(currentPlayers);
+
             // Сохраняем в временный файл
             await this.savePlayersToFile(currentPlayers);
 
-            // Сравниваем с предыдущим списком
-            await this.processDisconnectedPlayers(currentPlayers);
 
             // Обновляем сообщение
             const embed = new EmbedBuilder()
@@ -72,7 +73,6 @@ export class PlayersManager {
                 return;
             }
 
-            // Находим вышедших игроков
             const disconnectedPlayers = previousPlayers.filter(
                 player => !currentPlayers.includes(player)
             );
@@ -93,7 +93,7 @@ export class PlayersManager {
 
                     if (rows.length > 0) {
                         const lastConnection = rows[0].timestamp_last_connection;
-                        const minutesPlayed = dayjs().diff(dayjs(lastConnection), 'minute', true);
+                        const minutesPlayed = Number(dayjs().diff(dayjs(lastConnection), 'minute', true).toFixed(0));
                         
                         // Обновляем playedTime
                         await connection.query(
