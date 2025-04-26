@@ -2,6 +2,10 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, TextChannel
 import {pool} from '../db'; // Убраны фигурные скобки
 import { RowDataPacket } from 'mysql2';
 import dayjs from 'dayjs';
+import { createCanvas, loadImage, registerFont } from 'canvas';
+
+registerFont('fonts/Roboto-Bold.ttf', { family: 'Roboto', weight: 'bold' });
+registerFont('fonts/Roboto-Regular.ttf', { family: 'Roboto' });
 
 export class PlayersStats {
     private static readonly STATS_TIMEOUT = 60000; // 1 минута
@@ -170,8 +174,15 @@ export class PlayersStats {
                 
                 const playerStats = {connection: connectionRows[0], stats: statsRows[0]};
     
-                const embed = this.createStatsEmbed(playerName, playerStats);
-                await interaction.editReply({ embeds: [embed] });
+                // const embed = this.createStatsEmbed(playerName, playerStats);
+                // Использование
+    const embed = await this.createStatsEmbed(playerName, playerStats);
+    const imageBuffer = await this.createStatsImage(playerName, playerStats);
+
+                await interaction.editReply({ embeds: [embed], files: [{
+                    attachment: imageBuffer,
+                    name: 'stats.png'
+                }] });
     
             } finally {
                 connection.release();
@@ -193,20 +204,93 @@ export class PlayersStats {
         }, 60000);
     }
 
-    private static createStatsEmbed(playerName: string, data: any): EmbedBuilder {
+    private static async createStatsImage(playerName: string, data: any): Promise<Buffer> {
+        // Создаем холст
+        const canvas = createCanvas(800, 600);
+        const ctx = canvas.getContext('2d');
+    
+        // Рисуем фон
+        const gradient = ctx.createLinearGradient(0, 0, 800, 600);
+        gradient.addColorStop(0, '#1a1a2e');
+        gradient.addColorStop(1, '#16213e');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 800, 600);
+    
+        // Загружаем и рисуем аватар (пример)
+        try {
+            const avatar = await loadImage(data.avatarURL || 'default-avatar.png');
+            ctx.drawImage(avatar, 50, 50, 150, 150);
+        } catch (error) {
+            console.error('Error loading avatar:', error);
+        }
+    
+        // Стили текста
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'left';
+    
+        // Заголовок
+        ctx.font = 'bold 36px Roboto';
+        ctx.fillText(`Статистика игрока: ${playerName}`, 250, 100);
+    
+        // Основная статистика
+        ctx.font = '24px Roboto';
+        let yPosition = 200;
+        
+        const stats = [
+            { title: 'K/D Ratio', value: (data.stats.kills / (data.stats.deaths || 1)).toFixed(2) },
+            { title: 'Убийства', value: data.stats.kills },
+            { title: 'Смерти', value: data.stats.deaths },
+            { title: 'Суициды', value: data.stats.suicide },
+            { title: 'Тимкиллы', value: data.stats.teamkills },
+            { title: 'Первое подключение', value: dayjs(data.connection.timestamp_first_connection).format("DD.MM.YYYY HH:mm") },
+            { title: 'Последнее подключение', value: dayjs(data.connection.timestamp_last_connection).format("DD.MM.YYYY HH:mm") }
+        ];
+    
+        // Рисуем статистику
+        stats.forEach((stat, index) => {
+            ctx.fillText(`${stat.title}:`, 100, yPosition + (index * 50));
+            ctx.fillText(String(stat.value), 400, yPosition + (index * 50));
+        });
+    
+        // Добавляем графические элементы
+        ctx.strokeStyle = '#e94560';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(50, 180);
+        ctx.lineTo(750, 180);
+        ctx.stroke();
+    
+        // Конвертируем в Buffer
+        return canvas.toBuffer('image/png');
+    }
+
+    private static async createStatsEmbed(playerName: string, data: any): Promise<EmbedBuilder> {        
         return new EmbedBuilder()
             .setTitle(`Статистика игрока: ${playerName}`)
-            .addFields(
-                { name: 'ID игрока', value: data.connection.player_id || 'Неизвестно', inline: false },
-                { name: 'Соотношение убийств и смертей', value: String(Number(data.stats.kills/data.stats.deaths)), inline: false},
-                { name: 'Убийства', value: String(data.stats.kills) || 'Нет данных', inline: false },
-                { name: 'Смерти', value: String(data.stats.deaths) || 'Нет данных', inline: false },
-                { name: 'Суициды', value: String(data.stats.suicide) || 'Нет данных', inline: false },
-                { name: 'Убийство союзников', value: String(data.stats.teamkills) || 'Нет данных', inline: false },
-                { name: 'Первое подключение', value: dayjs(data.connection.timestamp_first_connection).format("HH:mm:ss | DD.MM.YYYY") || 'Нет данных', inline: false },
-                { name: 'Последнее подключение', value: dayjs(data.connection.timestamp_last_connection).format("HH:mm:ss | DD.MM.YYYY") || 'Нет данных', inline: false },
-            )
             .setColor(0x0099FF)
-            .setTimestamp();
+            .setImage('attachment://stats.png')
+            .addFields(
+                { name: 'Player ID', value: data.connection.player_id || 'Неизвестно' }
+            )
+            .setTimestamp()
+            .setFooter({ text: 'Статистика обновлена' });
     }
+    
+
+    // private static createStatsEmbed(playerName: string, data: any): EmbedBuilder {
+    //     return new EmbedBuilder()
+    //         .setTitle(`Статистика игрока: ${playerName}`)
+    //         .addFields(
+    //             { name: 'ID игрока', value: data.connection.player_id || 'Неизвестно', inline: false },
+    //             { name: 'Соотношение убийств и смертей', value: String(Number(data.stats.kills/data.stats.deaths)), inline: false},
+    //             { name: 'Убийства', value: String(data.stats.kills) || 'Нет данных', inline: false },
+    //             { name: 'Смерти', value: String(data.stats.deaths) || 'Нет данных', inline: false },
+    //             { name: 'Суициды', value: String(data.stats.suicide) || 'Нет данных', inline: false },
+    //             { name: 'Убийство союзников', value: String(data.stats.teamkills) || 'Нет данных', inline: false },
+    //             { name: 'Первое подключение', value: dayjs(data.connection.timestamp_first_connection).format("HH:mm:ss | DD.MM.YYYY") || 'Нет данных', inline: false },
+    //             { name: 'Последнее подключение', value: dayjs(data.connection.timestamp_last_connection).format("HH:mm:ss | DD.MM.YYYY") || 'Нет данных', inline: false },
+    //         )
+    //         .setColor(0x0099FF)
+    //         .setTimestamp();
+    // }
 }

@@ -11,6 +11,7 @@
     "@senfo/battleye": "^2.2.2",
     "a2s": "^1.0.2",
     "basic-ftp": "^5.0.5",
+    "canvas": "^3.1.0",
     "child-process-promise": "^2.2.1",
     "dayjs": "^1.11.13",
     "discord.js": "^14.18.0",
@@ -23,7 +24,7 @@
   "devDependencies": {
     "@types/child-process-promise": "^2.2.6",
     "@types/ftp": "^0.3.36",
-    "@types/node": "^20.17.30",
+    "@types/node": "^20.17.31",
     "typescript": "^5.3.3"
   },
   "description": "",
