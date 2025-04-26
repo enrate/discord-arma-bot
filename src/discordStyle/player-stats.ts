@@ -197,7 +197,7 @@ export class PlayersStats {
         return new EmbedBuilder()
             .setTitle(`Статистика игрока: ${playerName}`)
             .addFields(
-                { name: 'ID игрока', value: data.player_id || 'Неизвестно' },
+                { name: 'ID игрока', value: data.connection.player_id || 'Неизвестно' },
                 { name: 'Убийства', value: String(data.stats.kills) || 'Нет данных' },
                 { name: 'Смерти', value: String(data.stats.deaths) || 'Нет данных' },
                 { name: 'Суициды', value: String(data.stats.suicide) || 'Нет данных' },
