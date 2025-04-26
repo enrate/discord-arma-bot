@@ -160,7 +160,7 @@ export class PlayersStats {
             
             try {
                 const [connectionRows] = await connection.query<RowDataPacket[]>(
-                    `SELECT player_id 
+                    `SELECT * 
                     FROM player_connections 
                     WHERE player_name = ? 
                     ORDER BY timestamp_last_connection DESC 
@@ -186,8 +186,6 @@ export class PlayersStats {
                 
                 const playerStats = {connection: connectionRows[0], stats: statsRows[0]};
     
-                // const embed = this.createStatsEmbed(playerName, playerStats);
-                // Использование
     const embed = await this.createStatsEmbed(playerName, playerStats);
     const imageBuffer = await this.createStatsImage(playerName, playerStats);
 
@@ -281,8 +279,8 @@ ctx.restore();
             { title: 'Team kills:', value: data.stats.teamkills },
             { title: 'TOP №:', value: 'In progress' },
             { title: 'Played time:', value: data.stats.playedTime || 'In progress' },
-            { title: 'First connect:', value: dayjs(data.connection.timestamp_first_connection).format("DD.MM.YYYY HH:mm") },
-            { title: 'Last connect:', value: dayjs(data.connection.timestamp_last_connection).format("DD.MM.YYYY HH:mm") }
+            { title: 'First connect:', value: dayjs(data.connection.timestamp_first_connection).add(3, 'hour').format("DD.MM.YYYY HH:mm") },
+            { title: 'Last connect:', value: dayjs(data.connection.timestamp_last_connection).add(3, 'hour').format("DD.MM.YYYY HH:mm") }
         ];
     
         // Рисуем статистику
