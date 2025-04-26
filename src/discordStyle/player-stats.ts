@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, TextChannel, ModalSubmitInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, Message } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, TextChannel, ModalSubmitInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, Message, PermissionFlagsBits } from 'discord.js';
 import {pool} from '../db'; // Убраны фигурные скобки
 import { RowDataPacket } from 'mysql2';
 import dayjs from 'dayjs';
@@ -11,9 +11,19 @@ export class PlayersStats {
         try {
             console.log('Инициализация канала статистики...');
             
-            // Проверяем доступность канала
+            // Проверяем доступность канала и права
             if (!channel.isTextBased()) {
                 throw new Error('Канал не является текстовым');
+            }
+
+            // Проверяем права бота
+            const permissions = channel.guild.members.me?.permissionsIn(channel);
+            if (!permissions?.has([
+                PermissionFlagsBits.ViewChannel,
+                PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.ReadMessageHistory
+            ])) {
+                throw new Error('Недостаточно прав для работы с каналом статистики');
             }
 
             // Создаем кнопку
@@ -40,11 +50,11 @@ export class PlayersStats {
             } else {
                 console.log('Создаем новое сообщение...');
                 // Отправляем новое сообщение
-                await channel.send({
+                const newMessage = await channel.send({
                     content: this.STATS_CONTENT,
                     components: [row]
                 });
-                console.log('Новое сообщение создано');
+                console.log('Новое сообщение создано с ID:', newMessage.id);
             }
             
         } catch (error) {
@@ -56,7 +66,9 @@ export class PlayersStats {
     private static async findStatsMessage(channel: TextChannel): Promise<Message | null> {
         try {
             console.log('Поиск существующего сообщения статистики...');
-            const messages = await channel.messages.fetch({ limit: 20 });
+            
+            // Увеличиваем лимит сообщений для поиска
+            const messages = await channel.messages.fetch({ limit: 100 });
             console.log(`Найдено ${messages.size} сообщений в канале`);
             
             const foundMessage = messages.find(msg => {
@@ -66,15 +78,20 @@ export class PlayersStats {
                     c.components.some(b => b.customId === 'open_stats_form')
                 );
                 
-                console.log('Проверка сообщения:', {
-                    messageId: msg.id,
-                    isFromBot,
-                    hasCorrectContent,
-                    hasCorrectButton,
-                    content: msg.content,
-                    authorId: msg.author.id,
-                    botId: channel.client.user?.id
-                });
+                if (isFromBot) {
+                    console.log('Найдено сообщение от бота:', {
+                        messageId: msg.id,
+                        content: msg.content,
+                        hasCorrectContent,
+                        hasCorrectButton,
+                        components: msg.components.map(c => 
+                            c.components.map(b => ({
+                                customId: b.customId,
+                                type: b.type
+                            }))
+                        )
+                    });
+                }
                 
                 return isFromBot && hasCorrectContent && hasCorrectButton;
             });
