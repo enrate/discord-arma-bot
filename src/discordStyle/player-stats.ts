@@ -143,20 +143,34 @@ export class PlayersStats {
             const connection = await pool.getConnection();
             
             try {
-                const [rows] = await connection.query<RowDataPacket[]>(
-                    `SELECT * FROM player_connections 
+                const [connectionRows] = await connection.query<RowDataPacket[]>(
+                    `SELECT player_id 
+                    FROM player_connections 
                     WHERE player_name = ? 
                     ORDER BY timestamp_last_connection DESC 
                     LIMIT 1`,
                     [playerName]
                 );
-                console.log(rows)
-    
-                if (rows.length === 0) {
-                    throw new Error('Игрок не найден');
+                
+                if (connectionRows.length === 0) {
+                    throw new Error('Игрок не найден в истории подключений');
                 }
+                
+                const playerId = connectionRows[0].player_id;
+                
+                const [statsRows] = await connection.query<RowDataPacket[]>(
+                    `SELECT * FROM players_stats 
+                    WHERE player_id = ?`,
+                    [playerId]
+                );
+                
+                if (statsRows.length === 0) {
+                    throw new Error('Статистика игрока не найдена');
+                }
+                
+                const playerStats = {connection: connectionRows[0], stats: statsRows[0]};
     
-                const embed = this.createStatsEmbed(playerName, rows[0]);
+                const embed = this.createStatsEmbed(playerName, playerStats);
                 await interaction.editReply({ embeds: [embed] });
     
             } finally {
@@ -184,8 +198,12 @@ export class PlayersStats {
             .setTitle(`Статистика игрока: ${playerName}`)
             .addFields(
                 { name: 'ID игрока', value: data.player_id || 'Неизвестно' },
-                { name: 'Первое подключение', value: dayjs(data.timestamp_first_connection).format("HH.mm.ss | DD.MM.YYYY") || 'Нет данных' },
-                { name: 'Последнее подключение', value: dayjs(data.timestamp_last_connection).format("HH.mm.ss | DD.MM.YYYY") || 'Нет данных' }
+                { name: 'Убийства', value: data.stats.kills || 'Нет данных' },
+                { name: 'Смерти', value: data.stats.deaths || 'Нет данных' },
+                { name: 'Суициды', value: data.stats.suicide || 'Нет данных' },
+                { name: 'Убийство союзников', value: data.stats.teamkills || 'Нет данных' },
+                { name: 'Последнее подключение', value: dayjs(data.connection.timestamp_last_connection).format("HH.mm.ss | DD.MM.YYYY") || 'Нет данных' },
+                { name: 'Последнее подключение', value: dayjs(data.connection.timestamp_last_connection).format("HH.mm.ss | DD.MM.YYYY") || 'Нет данных' },
             )
             .setColor(0x0099FF)
             .setTimestamp();
