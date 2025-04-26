@@ -198,6 +198,7 @@ export class PlayersStats {
             .setTitle(`Статистика игрока: ${playerName}`)
             .addFields(
                 { name: 'ID игрока', value: data.connection.player_id || 'Неизвестно' },
+                { name: 'Соотношение убийств и смертей', value: String(Number(data.stats.kills/data.stats.deaths))},
                 { name: 'Убийства', value: String(data.stats.kills) || 'Нет данных' },
                 { name: 'Смерти', value: String(data.stats.deaths) || 'Нет данных' },
                 { name: 'Суициды', value: String(data.stats.suicide) || 'Нет данных' },
