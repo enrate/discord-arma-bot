@@ -3,7 +3,20 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Установка Python и зависимостей для сборки
-RUN apk add --no-cache python3 py3-pip
+RUN apk add --no-cache \
+    build-base \
+    python3 \
+    pkgconfig \
+    cairo-dev \
+    pango-dev \
+    jpeg-dev \
+    giflib-dev \
+    librsvg-dev \
+    musl-dev \
+    git
+
+# Устанавливаем глобальные npm-пакеты
+RUN npm install -g npm@11.3.0
 
 # 1. Копируем файлы зависимостей
 COPY package.json package-lock.json ./
