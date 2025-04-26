@@ -120,7 +120,7 @@ export class Rcon {
     public async kickPlayer(playerId:number) {
         await this.sendCommand(`#kick ${playerId}`)
     }
-    public async banPlayer(playerUID: string, timeInHours: number, reason: string) {
+    public async banPlayer(playerUID: string, timeInHours: number, reason: string): Promise<{uid: string, name: string}> {
         let targetPlayer = playerUID;
         if (!isUUIDv4(targetPlayer)) {
             const connection = await pool.getConnection();
@@ -144,7 +144,7 @@ export class Rcon {
         }
 
         const expectedMessage = `Player '${targetPlayer}' banned!`;
-        return new Promise((resolve, reject) => {
+        await new Promise((resolve, reject) => {
             const timer = setTimeout(() => {
                 reject(new Error('Timeout ban player'));
             }, 15000);
@@ -165,6 +165,7 @@ export class Rcon {
             await rconClient.kickPlayer(scopePlayer.number)
         }
         });
+        return {uid: targetPlayer, name: playerUID}
     }
     public async unBanPlayer(playerUID: string) {
         let targetPlayer = playerUID;
@@ -188,9 +189,9 @@ export class Rcon {
                 throw new Error("Ошбка при поиске UID игрока по имени в БД")
             }
         }
-        
+
         const expectedMessage = `Ban removed!`;
-        return new Promise((resolve, reject) => {
+        await new Promise((resolve, reject) => {
             const timer = setTimeout(() => {
                 reject(new Error('Timeout unban player'));
             }, 15000);
@@ -206,6 +207,7 @@ export class Rcon {
             this.connection.on('message', handler);
             this.sendCommand(`#ban remove ${playerUID}`).catch(reject);
         });
+        return targetPlayer
     }
 }
 

@@ -1,6 +1,7 @@
 import { ModalBuilder, TextInputBuilder, ActionRowBuilder, TextInputStyle, ModalSubmitInteraction, TextChannel } from 'discord.js';
 import { rconClient } from "../rcon";
 import { EmbedBuilder } from 'discord.js';
+import { isUUIDv4 } from '../helper';
 
 export class BanForms {
     public static createBanModal() {
@@ -91,9 +92,19 @@ export class BanForms {
                 return;
             }
 
-            await rconClient.banPlayer(ban_id_or_name, timeNumber, ban_reason);
-            await this.sendSuccessResponse(interaction, 'ban', { ban_id_or_name, ban_time, ban_reason });
+            const targetPlayer = await rconClient.banPlayer(ban_id_or_name, timeNumber, ban_reason);
             
+            await this.sendSuccessResponse(
+                interaction, 
+                'ban', 
+                {
+                    ban_id_or_name: !isUUIDv4(targetPlayer.name) 
+                        ? `${targetPlayer.uid}(${targetPlayer.name})` 
+                        : ban_id_or_name,
+                    ban_time,
+                    ban_reason
+                }
+            );
         } catch (error) {
             console.error('Ошибка бана:', error);
             await interaction.reply({ 
