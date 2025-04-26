@@ -3,8 +3,10 @@ import {pool} from '../db'; // Убраны фигурные скобки
 import { RowDataPacket } from 'mysql2';
 import dayjs from 'dayjs';
 import { createCanvas, loadImage, registerFont } from 'canvas';
-registerFont('../fonts/Roboto-Bold.ttf', { family: 'Roboto', weight: 'bold' });
-registerFont('../fonts/Roboto-Regular.ttf', { family: 'Roboto' });
+import { join } from 'path';
+
+registerFont(join(__dirname, '../fonts/Roboto-Bold.ttf'), { family: 'Roboto', weight: 'bold' });
+registerFont(join(__dirname,'../fonts/Roboto-Regular.ttf'), { family: 'Roboto' });
 
 export class PlayersStats {
     private static readonly STATS_TIMEOUT = 60000; // 1 минута
