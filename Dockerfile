@@ -31,18 +31,28 @@ COPY src/ ./src/
 # 4. Собираем проект
 RUN npm run build
 
+# Удаляем dev-зависимости после сборки
+RUN npm prune --production
+
 # Stage 2: Runtime
 FROM node:20-alpine
 WORKDIR /app
 
-# 5. Копируем только production зависимости
-COPY --from=builder /app/package.json .
-COPY --from=builder /app/package-lock.json .
-COPY .env /app/.env
-RUN npm ci --omit=dev
+# Устанавливаем runtime зависимости для canvas
+RUN apk add --no-cache \
+    cairo \
+    pango \
+    jpeg \
+    giflib \
+    librsvg
 
-# 6. Копируем собранный код
+# 5. Копируем production зависимости из builder
+COPY --from=builder /app/node_modules ./node_modules
+
+# 6. Копируем собранный код и настройки
 COPY --from=builder /app/dist/ ./dist/
+COPY --from=builder /app/package*.json ./
+COPY .env ./
 
 # 7. Настройки для production
 ENV NODE_ENV=production
