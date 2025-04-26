@@ -202,8 +202,8 @@ export class PlayersStats {
                 { name: 'Смерти', value: String(data.stats.deaths) || 'Нет данных' },
                 { name: 'Суициды', value: String(data.stats.suicide) || 'Нет данных' },
                 { name: 'Убийство союзников', value: String(data.stats.teamkills) || 'Нет данных' },
-                { name: 'Первое подключение', value: dayjs(data.connection.timestamp_first_connection).format("HH.mm.ss | DD.MM.YYYY") || 'Нет данных' },
-                { name: 'Последнее подключение', value: dayjs(data.connection.timestamp_last_connection).format("HH.mm.ss | DD.MM.YYYY") || 'Нет данных' },
+                { name: 'Первое подключение', value: dayjs(data.connection.timestamp_first_connection).format("HH:mm:ss | DD.MM.YYYY") || 'Нет данных' },
+                { name: 'Последнее подключение', value: dayjs(data.connection.timestamp_last_connection).format("HH:mm:ss | DD.MM.YYYY") || 'Нет данных' },
             )
             .setColor(0x0099FF)
             .setTimestamp();
