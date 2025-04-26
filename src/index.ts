@@ -24,6 +24,7 @@ class ArmaBot {
         await this.initDiscord();
         await this.sendInputForm(); // Добавляем отправку формы при инициализацииs
         await this.setupStatsChannel(); // Добавляем инициализацию канала статистики
+        await this.setupGlobalStatsChannel();
         this.startUpdateLoop();
     }
 
@@ -39,6 +40,24 @@ class ArmaBot {
             }
 
             const channel = await this.discordClient.channels.fetch(process.env.STATS_CHANNEL_ID!);
+
+            if (!(channel instanceof TextChannel)) {
+                throw new Error('Канал статистики не найден или не является текстовым');
+            }
+
+            await PlayersStats.initialize(channel);
+            console.log('Канал статистики успешно настроен');
+        } catch (error) {
+            console.error('Ошибка настройки канала статистики:', error);
+        }
+    }
+    private async setupGlobalStatsChannel() {
+        try {
+            if (!this.discordClient) {
+                throw new Error('Discord клиент не инициализирован');
+            }
+
+            const channel = await this.discordClient.channels.fetch(process.env.GLOBAL_STATS_CHANNEL_ID!);
 
             if (!(channel instanceof TextChannel)) {
                 throw new Error('Канал статистики не найден или не является текстовым');
