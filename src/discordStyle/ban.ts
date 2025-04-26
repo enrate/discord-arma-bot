@@ -27,10 +27,10 @@ export class BanForms {
     private static createBanIdInput() {
         return new ActionRowBuilder<TextInputBuilder>().addComponents(
             new TextInputBuilder()
-                .setCustomId('ban_id')
-                .setLabel("ID")
+                .setCustomId('ban_id_or_name')
+                .setLabel("ID/Nickname")
                 .setStyle(TextInputStyle.Short)
-                .setPlaceholder('ab6b9fa2-9ed8-434a-a2b6-bce11743372a')
+                .setPlaceholder('ab6b9fa2-9ed8-434a-a2b6-bce11743372a / nickname')
                 .setRequired(true)
         );
     }
@@ -60,10 +60,10 @@ export class BanForms {
     private static createUnbanIdInput() {
         return new ActionRowBuilder<TextInputBuilder>().addComponents(
             new TextInputBuilder()
-                .setCustomId('unban_id')
+                .setCustomId('unban_id_or_name')
                 .setLabel("ID")
                 .setStyle(TextInputStyle.Short)
-                .setPlaceholder('ab6b9fa2-9ed8-434a-a2b6-bce11743372a')
+                .setPlaceholder('ab6b9fa2-9ed8-434a-a2b6-bce11743372a / nickname')
                 .setRequired(true)
         );
     }
@@ -81,7 +81,7 @@ export class BanForms {
 
     public static async handleBanSubmit(interaction: ModalSubmitInteraction) {
         try {
-            const ban_id = interaction.fields.getTextInputValue('ban_id');
+            const ban_id_or_name = interaction.fields.getTextInputValue('ban_id_or_name');
             const ban_time = interaction.fields.getTextInputValue('ban_time');
             const ban_reason = interaction.fields.getTextInputValue('ban_reason');
 
@@ -91,8 +91,8 @@ export class BanForms {
                 return;
             }
 
-            await rconClient.banPlayer(ban_id, timeNumber, ban_reason);
-            await this.sendSuccessResponse(interaction, 'ban', { ban_id, ban_time, ban_reason });
+            await rconClient.banPlayer(ban_id_or_name, timeNumber, ban_reason);
+            await this.sendSuccessResponse(interaction, 'ban', { ban_id_or_name, ban_time, ban_reason });
             
         } catch (error) {
             console.error('Ошибка бана:', error);
@@ -104,11 +104,11 @@ export class BanForms {
 
     public static async handleUnbanSubmit(interaction: ModalSubmitInteraction) {
         try {
-            const unban_id = interaction.fields.getTextInputValue('unban_id');
+            const unban_id_or_name = interaction.fields.getTextInputValue('unban_id_or_name');
             const unban_reason = interaction.fields.getTextInputValue('unban_reason');
 
-            await rconClient.unBanPlayer(unban_id);
-            await this.sendSuccessResponse(interaction, 'unban', { unban_id, unban_reason });
+            await rconClient.unBanPlayer(unban_id_or_name);
+            await this.sendSuccessResponse(interaction, 'unban', { unban_id_or_name, unban_reason });
             
         } catch (error) {
             console.error('Ошибка разбана:', error);
@@ -117,19 +117,6 @@ export class BanForms {
             });
         }
     }
-
-    // private static setupAutoDelete(interaction: ModalSubmitInteraction) {
-    //     setTimeout(async () => {
-    //         try {
-    //             // Проверяем существование ответа
-    //             if (interaction.replied || interaction.deferred) {
-    //                 await interaction.deleteReply();
-    //             }
-    //         } catch(e) { 
-    //             console.error('Ошибка очистки:', e); 
-    //         }
-    //     }, 5000);
-    // }
 
     private static async sendSuccessResponse(
         interaction: ModalSubmitInteraction,
@@ -183,7 +170,7 @@ export class BanForms {
         if (type === 'ban') {
             embed.setTitle('Блокировка')
                 .addFields(
-                    { name: 'ID игрока', value: data.ban_id },
+                    { name: 'ID/Nickname игрока', value: data.ban_id_or_name },
                     { name: 'Время', value: `${data.ban_time} часов` },
                     { name: 'Причина', value: data.ban_reason }
                 )
@@ -191,7 +178,7 @@ export class BanForms {
         } else {
             embed.setTitle('Снятие блокировки')
                 .addFields(
-                    { name: 'ID игрока', value: data.unban_id },
+                    { name: 'ID/Nickname игрока', value: data.unban_id_or_name },
                     { name: 'Причина', value: data.unban_reason }
                 )
                 .setColor(0x00FF00);

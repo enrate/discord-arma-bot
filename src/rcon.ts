@@ -1,8 +1,10 @@
 import * as readline from 'readline';
 import { readCfg, Socket } from '@senfo/battleye';
-import { parsePlayersData } from './helper';
+import { isUUIDv4, parsePlayersData } from './helper';
 import { Player } from './types';
 import dayjs from 'dayjs';
+import { pool } from './db';
+import { RowDataPacket } from 'mysql2';
 
 export class Rcon {
     private socket: Socket;
@@ -119,7 +121,29 @@ export class Rcon {
         await this.sendCommand(`#kick ${playerId}`)
     }
     public async banPlayer(playerUID: string, timeInHours: number, reason: string) {
-        const expectedMessage = `Player '${playerUID}' banned!`;
+        let targetPlayer = playerUID;
+        if (!isUUIDv4(targetPlayer)) {
+            const connection = await pool.getConnection();
+            try {
+                const [connectionRows] = await connection.query<RowDataPacket[]>(
+                    `SELECT player_id 
+                    FROM player_connections 
+                    WHERE player_name = ? 
+                    ORDER BY timestamp_last_connection DESC 
+                    LIMIT 1`,
+                    [targetPlayer]
+                );
+                
+                if (connectionRows.length === 0) {
+                    throw new Error('Игрок не найден в истории подключений');
+                }
+                targetPlayer = connectionRows[0].player_id;
+            } catch (error) {
+                throw new Error("Ошбка при поиске UID игрока по имени в БД")
+            }
+        }
+
+        const expectedMessage = `Player '${targetPlayer}' banned!`;
         return new Promise((resolve, reject) => {
             const timer = setTimeout(() => {
                 reject(new Error('Timeout ban player'));
@@ -134,7 +158,7 @@ export class Rcon {
             };
     
             this.connection.on('message', handler);
-            this.sendCommand(`#ban create ${playerUID} ${timeInHours*3600} ${reason}`).catch(reject);
+            this.sendCommand(`#ban create ${targetPlayer} ${timeInHours*3600} ${reason}`).catch(reject);
         }).then(async () => {
         const scopePlayer = (await rconClient.getPlayers()).find((player) => player.uid === playerUID)
         if(scopePlayer) {
@@ -143,6 +167,28 @@ export class Rcon {
         });
     }
     public async unBanPlayer(playerUID: string) {
+        let targetPlayer = playerUID;
+        if (!isUUIDv4(targetPlayer)) {
+            const connection = await pool.getConnection();
+            try {
+                const [connectionRows] = await connection.query<RowDataPacket[]>(
+                    `SELECT player_id 
+                    FROM player_connections 
+                    WHERE player_name = ? 
+                    ORDER BY timestamp_last_connection DESC 
+                    LIMIT 1`,
+                    [targetPlayer]
+                );
+                
+                if (connectionRows.length === 0) {
+                    throw new Error('Игрок не найден в истории подключений');
+                }
+                targetPlayer = connectionRows[0].player_id;
+            } catch (error) {
+                throw new Error("Ошбка при поиске UID игрока по имени в БД")
+            }
+        }
+        
         const expectedMessage = `Ban removed!`;
         return new Promise((resolve, reject) => {
             const timer = setTimeout(() => {
