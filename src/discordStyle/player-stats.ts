@@ -198,10 +198,10 @@ export class PlayersStats {
             .setTitle(`Статистика игрока: ${playerName}`)
             .addFields(
                 { name: 'ID игрока', value: data.player_id || 'Неизвестно' },
-                { name: 'Убийства', value: data.stats.kills || 'Нет данных' },
-                { name: 'Смерти', value: data.stats.deaths || 'Нет данных' },
-                { name: 'Суициды', value: data.stats.suicide || 'Нет данных' },
-                { name: 'Убийство союзников', value: data.stats.teamkills || 'Нет данных' },
+                { name: 'Убийства', value: String(data.stats.kills) || 'Нет данных' },
+                { name: 'Смерти', value: String(data.stats.deaths) || 'Нет данных' },
+                { name: 'Суициды', value: String(data.stats.suicide) || 'Нет данных' },
+                { name: 'Убийство союзников', value: String(data.stats.teamkills) || 'Нет данных' },
                 { name: 'Последнее подключение', value: dayjs(data.connection.timestamp_last_connection).format("HH.mm.ss | DD.MM.YYYY") || 'Нет данных' },
                 { name: 'Последнее подключение', value: dayjs(data.connection.timestamp_last_connection).format("HH.mm.ss | DD.MM.YYYY") || 'Нет данных' },
             )
