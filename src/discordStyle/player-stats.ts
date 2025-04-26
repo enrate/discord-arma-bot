@@ -3,10 +3,21 @@ import {pool} from '../db'; // Убраны фигурные скобки
 import { RowDataPacket } from 'mysql2';
 import dayjs from 'dayjs';
 import { createCanvas, loadImage, registerFont } from 'canvas';
-import { join } from 'path';
+// import RobotoBold from '../../fonts/Roboto-Bold.ttf';
+// import RobotoRegular from '../../fonts/Roboto-Regular.ttf';
+import path from 'path';
 
-registerFont(join(__dirname, '../fonts/Roboto-Bold.ttf'), { family: 'Roboto', weight: 'bold' });
-registerFont(join(__dirname,'../fonts/Roboto-Regular.ttf'), { family: 'Roboto' });
+const fontsDir = path.join(process.cwd(), 'fonts');
+const imagesDir = path.join(process.cwd(), 'images');
+
+registerFont(path.join(fontsDir, 'Roboto-Bold.ttf'), {
+    family: 'Roboto',
+    weight: 'bold'
+  });
+  
+  registerFont(path.join(fontsDir, 'Roboto-Regular.ttf'), {
+    family: 'Roboto'
+  });
 
 export class PlayersStats {
     private static readonly STATS_TIMEOUT = 60000; // 1 минута
@@ -207,20 +218,36 @@ export class PlayersStats {
 
     private static async createStatsImage(playerName: string, data: any): Promise<Buffer> {
         // Создаем холст
-        const canvas = createCanvas(800, 600);
+        const canvas = createCanvas(800, 700);
         const ctx = canvas.getContext('2d');
     
         // Рисуем фон
-        const gradient = ctx.createLinearGradient(0, 0, 800, 600);
+        const gradient = ctx.createLinearGradient(0, 0, 800, 700);
         gradient.addColorStop(0, '#1a1a2e');
         gradient.addColorStop(1, '#16213e');
         ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, 800, 600);
+        ctx.fillRect(0, 0, 800, 700);
     
         // Загружаем и рисуем аватар (пример)
+        // try {
+        //     const avatar = await loadImage(data.avatarURL || path.join(imagesDir, 'default-avatar.png'));
+        //     ctx.drawImage(avatar, -10, -10, 200, 200);
+        // } catch (error) {
+        //     console.error('Error loading avatar:', error);
+        // }
         try {
-            const avatar = await loadImage(data.avatarURL || 'default-avatar.png');
-            ctx.drawImage(avatar, 50, 50, 150, 150);
+            const avatar = await loadImage(data.avatarURL || path.join(imagesDir, 'default-avatar.png'));
+            
+            // Сохраняем текущие настройки контекста
+            ctx.save();
+            
+            // Устанавливаем прозрачность (0.0 - полностью прозрачный, 1.0 - непрозрачный)
+            ctx.globalAlpha = 0.5;
+            
+            ctx.drawImage(avatar, 400, 0, 800, 800);
+            
+            // Восстанавливаем предыдущие настройки
+            ctx.restore();
         } catch (error) {
             console.error('Error loading avatar:', error);
         }
@@ -230,26 +257,29 @@ export class PlayersStats {
         ctx.textAlign = 'left';
     
         // Заголовок
-        ctx.font = 'bold 36px Roboto';
-        ctx.fillText(`Статистика игрока: ${playerName}`, 250, 100);
+        ctx.font = 'bold 65px Roboto';
+        ctx.fillText(`${playerName}`, 300, 100);
     
         // Основная статистика
         ctx.font = '24px Roboto';
         let yPosition = 200;
         
         const stats = [
-            { title: 'K/D Ratio', value: (data.stats.kills / (data.stats.deaths || 1)).toFixed(2) },
-            { title: 'Убийства', value: data.stats.kills },
-            { title: 'Смерти', value: data.stats.deaths },
-            { title: 'Суициды', value: data.stats.suicide },
-            { title: 'Тимкиллы', value: data.stats.teamkills },
-            { title: 'Первое подключение', value: dayjs(data.connection.timestamp_first_connection).format("DD.MM.YYYY HH:mm") },
-            { title: 'Последнее подключение', value: dayjs(data.connection.timestamp_last_connection).format("DD.MM.YYYY HH:mm") }
+            {title: "", value: ""},
+            { title: 'K/D Ratio:', value: (data.stats.kills / (data.stats.deaths || 1)).toFixed(2) },
+            { title: 'Kills:', value: data.stats.kills },
+            { title: 'Deaths:', value: data.stats.deaths },
+            { title: 'Suicides:', value: data.stats.suicide },
+            { title: 'Team kills:', value: data.stats.teamkills },
+            { title: 'TOP №:', value: 'In progress' },
+            { title: 'Played time:', value: data.stats.playedTime || 'In progress' },
+            { title: 'First connect:', value: dayjs(data.connection.timestamp_first_connection).format("DD.MM.YYYY HH:mm") },
+            { title: 'Last connect:', value: dayjs(data.connection.timestamp_last_connection).format("DD.MM.YYYY HH:mm") }
         ];
     
         // Рисуем статистику
         stats.forEach((stat, index) => {
-            ctx.fillText(`${stat.title}:`, 100, yPosition + (index * 50));
+            ctx.fillText(`${stat.title}`, 100, yPosition + (index * 50));
             ctx.fillText(String(stat.value), 400, yPosition + (index * 50));
         });
     

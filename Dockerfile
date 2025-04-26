@@ -28,7 +28,7 @@ RUN npm ci --include=dev
 COPY tsconfig.json ./
 COPY src/ ./src/
 COPY fonts/ ./fonts/
-
+COPY images/ ./images/
 
 # 4. Собираем проект
 RUN npm run build
@@ -51,6 +51,7 @@ RUN apk add --no-cache \
 # 5. Копируем production зависимости из builder
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/fonts ./fonts
+COPY --from=builder /app/images ./images
 
 # 6. Копируем собранный код и настройки
 COPY --from=builder /app/dist/ ./dist/
