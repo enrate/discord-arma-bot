@@ -62,7 +62,7 @@ export class BanForms {
         return new ActionRowBuilder<TextInputBuilder>().addComponents(
             new TextInputBuilder()
                 .setCustomId('unban_id_or_name')
-                .setLabel("ID")
+                .setLabel("ID/Nickname")
                 .setStyle(TextInputStyle.Short)
                 .setPlaceholder('ab6b9fa2-9ed8-434a-a2b6-bce11743372a / nickname')
                 .setRequired(true)
@@ -99,7 +99,7 @@ export class BanForms {
                 'ban', 
                 {
                     ban_id_or_name: !isUUIDv4(targetPlayer.name) 
-                        ? `${targetPlayer.uid}(${targetPlayer.name})` 
+                        ? `${targetPlayer.name}(${targetPlayer.uid})` 
                         : ban_id_or_name,
                     ban_time,
                     ban_reason
@@ -118,8 +118,18 @@ export class BanForms {
             const unban_id_or_name = interaction.fields.getTextInputValue('unban_id_or_name');
             const unban_reason = interaction.fields.getTextInputValue('unban_reason');
 
-            await rconClient.unBanPlayer(unban_id_or_name);
-            await this.sendSuccessResponse(interaction, 'unban', { unban_id_or_name, unban_reason });
+            const targetPlayer = await rconClient.unBanPlayer(unban_id_or_name);
+
+            await this.sendSuccessResponse(
+                interaction, 
+                'unban', 
+                {
+                    unban_id_or_name: !isUUIDv4(targetPlayer.name) 
+                        ? `${targetPlayer.name}(${targetPlayer.uid})` 
+                        : unban_id_or_name,
+                    unban_reason
+                }
+            );
             
         } catch (error) {
             console.error('Ошибка разбана:', error);

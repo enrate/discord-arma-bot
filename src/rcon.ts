@@ -167,7 +167,7 @@ export class Rcon {
         });
         return {uid: targetPlayer, name: playerUID}
     }
-    public async unBanPlayer(playerUID: string) {
+    public async unBanPlayer(playerUID: string): Promise<{uid: string, name: string}> {
         let targetPlayer = playerUID;
         if (!isUUIDv4(targetPlayer)) {
             const connection = await pool.getConnection();
@@ -207,7 +207,7 @@ export class Rcon {
             this.connection.on('message', handler);
             this.sendCommand(`#ban remove ${playerUID}`).catch(reject);
         });
-        return targetPlayer
+        return {uid: targetPlayer, name: playerUID}
     }
 }
 
