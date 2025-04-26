@@ -198,11 +198,11 @@ export class PlayersStats {
             .setTitle(`Статистика игрока: ${playerName}`)
             .addFields(
                 { name: 'ID игрока', value: data.connection.player_id || 'Неизвестно', inline: false },
-                { name: 'Соотношение убийств и смертей', value: String(Number(data.stats.kills/data.stats.deaths)), inline: true},
-                { name: 'Убийства', value: String(data.stats.kills) || 'Нет данных', inline: true },
-                { name: 'Смерти', value: String(data.stats.deaths) || 'Нет данных', inline: true },
-                { name: 'Суициды', value: String(data.stats.suicide) || 'Нет данных', inline: true },
-                { name: 'Убийство союзников', value: String(data.stats.teamkills) || 'Нет данных', inline: true },
+                { name: 'Соотношение убийств и смертей', value: String(Number(data.stats.kills/data.stats.deaths)), inline: false},
+                { name: 'Убийства', value: String(data.stats.kills) || 'Нет данных', inline: false },
+                { name: 'Смерти', value: String(data.stats.deaths) || 'Нет данных', inline: false },
+                { name: 'Суициды', value: String(data.stats.suicide) || 'Нет данных', inline: false },
+                { name: 'Убийство союзников', value: String(data.stats.teamkills) || 'Нет данных', inline: false },
                 { name: 'Первое подключение', value: dayjs(data.connection.timestamp_first_connection).format("HH:mm:ss | DD.MM.YYYY") || 'Нет данных', inline: false },
                 { name: 'Последнее подключение', value: dayjs(data.connection.timestamp_last_connection).format("HH:mm:ss | DD.MM.YYYY") || 'Нет данных', inline: false },
             )
