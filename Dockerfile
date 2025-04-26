@@ -27,7 +27,7 @@ RUN npm ci --include=dev
 # 3. Копируем исходный код
 COPY tsconfig.json ./
 COPY src/ ./src/
-COPY fonts/ ./fonts/  # Добавьте эту строку
+COPY fonts/ ./fonts/
 
 
 # 4. Собираем проект
