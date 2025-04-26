@@ -197,14 +197,14 @@ export class PlayersStats {
         return new EmbedBuilder()
             .setTitle(`Статистика игрока: ${playerName}`)
             .addFields(
-                { name: 'ID игрока', value: data.connection.player_id || 'Неизвестно' },
-                { name: 'Соотношение убийств и смертей', value: String(Number(data.stats.kills/data.stats.deaths))},
-                { name: 'Убийства', value: String(data.stats.kills) || 'Нет данных' },
-                { name: 'Смерти', value: String(data.stats.deaths) || 'Нет данных' },
-                { name: 'Суициды', value: String(data.stats.suicide) || 'Нет данных' },
-                { name: 'Убийство союзников', value: String(data.stats.teamkills) || 'Нет данных' },
-                { name: 'Первое подключение', value: dayjs(data.connection.timestamp_first_connection).format("HH:mm:ss | DD.MM.YYYY") || 'Нет данных' },
-                { name: 'Последнее подключение', value: dayjs(data.connection.timestamp_last_connection).format("HH:mm:ss | DD.MM.YYYY") || 'Нет данных' },
+                { name: 'ID игрока', value: data.connection.player_id || 'Неизвестно', inline: false },
+                { name: 'Соотношение убийств и смертей', value: String(Number(data.stats.kills/data.stats.deaths)), inline: true},
+                { name: 'Убийства', value: String(data.stats.kills) || 'Нет данных', inline: true },
+                { name: 'Смерти', value: String(data.stats.deaths) || 'Нет данных', inline: true },
+                { name: 'Суициды', value: String(data.stats.suicide) || 'Нет данных', inline: true },
+                { name: 'Убийство союзников', value: String(data.stats.teamkills) || 'Нет данных', inline: true },
+                { name: 'Первое подключение', value: dayjs(data.connection.timestamp_first_connection).format("HH:mm:ss | DD.MM.YYYY") || 'Нет данных', inline: false },
+                { name: 'Последнее подключение', value: dayjs(data.connection.timestamp_last_connection).format("HH:mm:ss | DD.MM.YYYY") || 'Нет данных', inline: false },
             )
             .setColor(0x0099FF)
             .setTimestamp();
