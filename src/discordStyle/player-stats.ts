@@ -18,13 +18,24 @@ export class PlayersStats {
 
             // Проверяем права бота
             const permissions = channel.guild.members.me?.permissionsIn(channel);
-            if (!permissions?.has([
-                PermissionFlagsBits.ViewChannel,
-                PermissionFlagsBits.SendMessages,
-                PermissionFlagsBits.ReadMessageHistory
-            ])) {
-                throw new Error('Недостаточно прав для работы с каналом статистики');
+            const requiredPermissions = [
+                { flag: PermissionFlagsBits.ViewChannel, name: 'Просмотр канала' },
+                { flag: PermissionFlagsBits.SendMessages, name: 'Отправка сообщений' },
+                { flag: PermissionFlagsBits.ReadMessageHistory, name: 'Чтение истории сообщений' }
+            ];
+
+            const missingPermissions = requiredPermissions.filter(
+                perm => !permissions?.has(perm.flag)
+            );
+
+            if (missingPermissions.length > 0) {
+                const missingPermsText = missingPermissions
+                    .map(p => p.name)
+                    .join(', ');
+                throw new Error(`Недостаточно прав для работы с каналом статистики. Отсутствуют права: ${missingPermsText}`);
             }
+
+            console.log('Проверка прав успешна, продолжаем инициализацию...');
 
             // Создаем кнопку
             const row = new ActionRowBuilder<ButtonBuilder>()
