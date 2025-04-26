@@ -9,6 +9,8 @@ export class PlayersStats {
 
     public static async initialize(channel: TextChannel) {
         try {
+            console.log('Инициализация канала статистики...');
+            
             // Проверяем доступность канала
             if (!channel.isTextBased()) {
                 throw new Error('Канал не является текстовым');
@@ -25,19 +27,24 @@ export class PlayersStats {
 
             // Ищем существующее сообщение
             const existingMessage = await this.findStatsMessage(channel);
+            console.log('Результат поиска сообщения:', existingMessage ? 'найдено' : 'не найдено');
 
             if (existingMessage) {
+                console.log('Обновляем существующее сообщение...');
                 // Обновляем существующее сообщение
                 await existingMessage.edit({
                     content: this.STATS_CONTENT,
                     components: [row]
                 });
+                console.log('Сообщение успешно обновлено');
             } else {
+                console.log('Создаем новое сообщение...');
                 // Отправляем новое сообщение
                 await channel.send({
                     content: this.STATS_CONTENT,
                     components: [row]
                 });
+                console.log('Новое сообщение создано');
             }
             
         } catch (error) {
@@ -48,16 +55,37 @@ export class PlayersStats {
 
     private static async findStatsMessage(channel: TextChannel): Promise<Message | null> {
         try {
+            console.log('Поиск существующего сообщения статистики...');
             const messages = await channel.messages.fetch({ limit: 20 });
-            return messages.find(msg => 
-                msg.author.id === channel.client.user?.id &&
-                msg.content === this.STATS_CONTENT &&
-                msg.components.some(c => 
-                    c.components.some(b => 
-                        b.customId === 'open_stats_form'
-                    )
-                )
-            ) || null;
+            console.log(`Найдено ${messages.size} сообщений в канале`);
+            
+            const foundMessage = messages.find(msg => {
+                const isFromBot = msg.author.id === channel.client.user?.id;
+                const hasCorrectContent = msg.content === this.STATS_CONTENT;
+                const hasCorrectButton = msg.components.some(c => 
+                    c.components.some(b => b.customId === 'open_stats_form')
+                );
+                
+                console.log('Проверка сообщения:', {
+                    messageId: msg.id,
+                    isFromBot,
+                    hasCorrectContent,
+                    hasCorrectButton,
+                    content: msg.content,
+                    authorId: msg.author.id,
+                    botId: channel.client.user?.id
+                });
+                
+                return isFromBot && hasCorrectContent && hasCorrectButton;
+            });
+
+            if (foundMessage) {
+                console.log('Найдено существующее сообщение:', foundMessage.id);
+            } else {
+                console.log('Существующее сообщение не найдено');
+            }
+            
+            return foundMessage || null;
         } catch (error) {
             console.error('Ошибка поиска сообщения статистики:', error);
             return null;
