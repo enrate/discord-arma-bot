@@ -274,7 +274,7 @@ ctx.restore();
         ctx.font = '24px Roboto';
         let yPosition = 200;
         
-        const hours = Number((data.stats.playedTime/60).toFixed(0))
+        const hours = Math.floor(data.stats.playedTime / 60)
         const stats = [
             {title: "", value: ""},
             { title: 'K/D Ratio:', value: (data.stats.kills / (data.stats.deaths || 1)).toFixed(2) },
