@@ -50,7 +50,7 @@ RUN apk add --no-cache \
 
 # 5. Копируем production зависимости из builder
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/fonts ./fonts  # И эту строку
+COPY --from=builder /app/fonts ./fonts
 
 # 6. Копируем собранный код и настройки
 COPY --from=builder /app/dist/ ./dist/
