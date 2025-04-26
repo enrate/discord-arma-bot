@@ -1,10 +1,11 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, TextChannel, ModalSubmitInteraction, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, TextChannel, ModalSubmitInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, Message } from 'discord.js';
 import {pool} from '../db'; // Убраны фигурные скобки
 import { RowDataPacket } from 'mysql2';
 import dayjs from 'dayjs';
 
 export class PlayersStats {
     private static readonly STATS_TIMEOUT = 60000; // 1 минута
+    private static readonly STATS_CONTENT = '**Получить статистику игрока**';
 
     public static async initialize(channel: TextChannel) {
         try {
@@ -12,9 +13,6 @@ export class PlayersStats {
             if (!channel.isTextBased()) {
                 throw new Error('Канал не является текстовым');
             }
-
-            // Очищаем предыдущие сообщения бота
-            await this.cleanupChannel(channel);
 
             // Создаем кнопку
             const row = new ActionRowBuilder<ButtonBuilder>()
@@ -25,25 +23,44 @@ export class PlayersStats {
                         .setStyle(ButtonStyle.Primary)
                 );
 
-            // Отправляем сообщение с кнопкой
-            await channel.send({
-                content: '**Получить статистику игрока**',
-                components: [row]
-            });
+            // Ищем существующее сообщение
+            const existingMessage = await this.findStatsMessage(channel);
+
+            if (existingMessage) {
+                // Обновляем существующее сообщение
+                await existingMessage.edit({
+                    content: this.STATS_CONTENT,
+                    components: [row]
+                });
+            } else {
+                // Отправляем новое сообщение
+                await channel.send({
+                    content: this.STATS_CONTENT,
+                    components: [row]
+                });
+            }
             
         } catch (error) {
             console.error('Ошибка инициализации канала статистики:', error);
             throw error;
         }
     }
-    private static async cleanupChannel(channel: TextChannel) {
+
+    private static async findStatsMessage(channel: TextChannel): Promise<Message | null> {
         try {
-            const messages = await channel.messages.fetch({ limit: 100 });
-            const botMessages = messages.filter(msg => msg.author.id === channel.client.user?.id);
-            
-            await Promise.all(botMessages.map(msg => msg.delete()));
+            const messages = await channel.messages.fetch({ limit: 20 });
+            return messages.find(msg => 
+                msg.author.id === channel.client.user?.id &&
+                msg.content === this.STATS_CONTENT &&
+                msg.components.some(c => 
+                    c.components.some(b => 
+                        b.customId === 'open_stats_form'
+                    )
+                )
+            ) || null;
         } catch (error) {
-            console.error('Ошибка очистки канала:', error);
+            console.error('Ошибка поиска сообщения статистики:', error);
+            return null;
         }
     }
 
