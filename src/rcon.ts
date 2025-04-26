@@ -158,7 +158,7 @@ export class Rcon {
             };
     
             this.connection.on('message', handler);
-            this.sendCommand(`#ban create ${targetPlayer} ${timeInHours*3600} ${reason}`).catch(reject);
+            this.sendCommand(`#ban create ${!isUUIDv4(playerUID) ? targetPlayer : playerUID} ${timeInHours*3600} ${reason}`).catch(reject);
         }).then(async () => {
         const scopePlayer = (await rconClient.getPlayers()).find((player) => player.uid === playerUID)
         if(scopePlayer) {
@@ -205,7 +205,7 @@ export class Rcon {
             };
     
             this.connection.on('message', handler);
-            this.sendCommand(`#ban remove ${playerUID}`).catch(reject);
+            this.sendCommand(`#ban remove ${!isUUIDv4(playerUID) ? targetPlayer : playerUID}`).catch(reject);
         });
         return {uid: targetPlayer, name: playerUID}
     }
