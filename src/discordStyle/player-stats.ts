@@ -2,18 +2,18 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, TextChannel
 import {pool} from '../db'; // Убраны фигурные скобки
 import { RowDataPacket } from 'mysql2';
 import dayjs from 'dayjs';
-import { createCanvas, loadImage, registerFont } from 'canvas';
-// import RobotoBold from '../../fonts/Roboto-Bold.ttf';
-// import RobotoRegular from '../../fonts/Roboto-Regular.ttf';
+import { createCanvas, Image, loadImage, registerFont } from 'canvas';
 import path from 'path';
 
 const fontsDir = path.join(process.cwd(), 'fonts');
 const imagesDir = path.join(process.cwd(), 'images');
 
+
 registerFont(path.join(fontsDir, 'Roboto-Bold.ttf'), {
     family: 'Roboto',
     weight: 'bold'
   });
+
   
   registerFont(path.join(fontsDir, 'Roboto-Regular.ttf'), {
     family: 'Roboto'
@@ -248,13 +248,15 @@ export class PlayersStats {
             ctx.restore();
         } catch (error) {
             console.error('Error loading avatar:', error);
-        }
-    
+        } 
+        
+        // Отрисовка с проверкой загруженных ресурсов
         // Стили текста
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'left';
     
         // Заголовок
+        
         ctx.save();
 ctx.textAlign = 'center';
 
@@ -263,13 +265,16 @@ const centerX = canvas.width / 2;  // canvas - ваш объект холста
 
 // Рисуем текст
 ctx.font = 'bold 65px Roboto';
-ctx.fillText(playerName, centerX, 100);
+        
+            ctx.fillText(playerName, centerX, 100);
+    
 ctx.restore();
     
         // Основная статистика
         ctx.font = '24px Roboto';
         let yPosition = 200;
         
+        const hours = Number((data.stats.playedTime/60).toFixed(0))
         const stats = [
             {title: "", value: ""},
             { title: 'K/D Ratio:', value: (data.stats.kills / (data.stats.deaths || 1)).toFixed(2) },
@@ -277,29 +282,35 @@ ctx.restore();
             { title: 'Deaths:', value: data.stats.deaths },
             { title: 'Suicides:', value: data.stats.suicide },
             { title: 'Team kills:', value: data.stats.teamkills },
-            { title: 'TOP №:', value: 'In progress' },
-            { title: 'Played time:', value: data.stats.playedTime || 'In progress' },
+            { title: 'TOP №:', value: data.stats.playedTime < 60 ? "To display you need to have more than 1 hour of active play" : data.stats.top },
+            { title: 'Played time:', value: `${hours} hours ${data.stats.playedTime-hours*60} minutes` },
             { title: 'First connect:', value: dayjs(data.connection.timestamp_first_connection).add(3, 'hour').format("DD.MM.YYYY HH:mm") },
             { title: 'Last connect:', value: dayjs(data.connection.timestamp_last_connection).add(3, 'hour').format("DD.MM.YYYY HH:mm") }
         ];
-    
-        // Рисуем статистику
-        stats.forEach((stat, index) => {
-            ctx.fillText(`${stat.title}`, 100, yPosition + (index * 50));
-            ctx.fillText(String(stat.value), 400, yPosition + (index * 50));
-        });
-    
-        // Добавляем графические элементы
-        ctx.strokeStyle = '#e94560';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(50, 180);
-        ctx.lineTo(750, 180);
-        ctx.stroke();
-    
-        // Конвертируем в Buffer
-        return canvas.toBuffer('image/png');
-    }
+
+            // Рисуем статистику
+            stats.forEach((stat, index) => {
+                ctx.fillText(`${stat.title}`, 100, yPosition + (index * 50));
+                ctx.fillText(String(stat.value), 400, yPosition + (index * 50));
+            });
+            
+            // Добавляем графические элементы
+            ctx.strokeStyle = '#e94560';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(50, 180);
+            ctx.lineTo(750, 180);
+            ctx.stroke();
+
+            
+            if (data.stats.top <= 3) {
+                const medal = await loadImage(path.join(imagesDir, data.stats.top == 1 ? 'first-icon.png' : data.stats.top == 2 ? 'second-icon.png' : 'third-icon.png'));
+                ctx.drawImage(medal, centerX + 200, 30, 200, 200);
+            }
+
+            // Конвертируем в Buffer
+            return canvas.toBuffer('image/png');
+        }
 
     private static async createStatsEmbed(playerName: string, data: any): Promise<EmbedBuilder> {        
         return new EmbedBuilder()

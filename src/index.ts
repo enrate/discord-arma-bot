@@ -6,6 +6,7 @@ import { ServerConfig } from './types';
 import { PlayersManager } from './discordStyle/players-list';
 import { StatusManager } from './discordStyle/status';
 import { PlayersStats } from './discordStyle/player-stats';
+import { pool } from './db';
 
 
 class ArmaBot {
@@ -25,6 +26,7 @@ class ArmaBot {
         await this.sendInputForm(); // Добавляем отправку формы при инициализацииs
         await this.setupStatsChannel(); // Добавляем инициализацию канала статистики
         await this.setupGlobalStatsChannel();
+        await this.updateTopPlayers();
         this.startUpdateLoop();
     }
 
@@ -82,12 +84,48 @@ class ArmaBot {
         await PlayersManager.update(this.discordClient, this.config.discord.channelId);
     }
 
+    private async updateTopPlayers() {
+        const connection = await pool.getConnection();
+        try {
+            await connection.beginTransaction();
+    
+            // Используем подзапрос вместо CTE
+            await connection.query(`
+                UPDATE players_stats ps
+                JOIN (
+                    SELECT 
+                        p.player_id,
+                        @rank := @rank + 1 AS top_rank
+                    FROM 
+                        players_stats p
+                        JOIN player_connections c ON p.player_id = c.player_id
+                        CROSS JOIN (SELECT @rank := 0) r
+                    WHERE 
+                        p.playedTime > 60
+                    ORDER BY 
+                        p.ppm DESC
+                ) AS ranks ON ps.player_id = ranks.player_id
+                SET ps.top = ranks.top_rank
+            `);
+    
+            await connection.commit();
+        } catch (error) {
+            await connection.rollback();
+            console.error('Error updating top players:', error);
+            throw error; // Перебрасываем ошибку для обработки выше
+        } finally {
+            connection.release();
+        }
+    }
+
     private startUpdateLoop() {
         // Обновление статуса каждую минуту
         setInterval(() => this.updateStatus(), 60_000);
         
         // Обновление списка игроков каждые 2 минуты
         setInterval(() => this.updatePlayerList(), 120_000);
+
+        setInterval(() => this.updateTopPlayers(), 60_000 * 60)
         
         Promise.all([
             this.updateStatus(),
