@@ -257,8 +257,16 @@ export class PlayersStats {
         ctx.textAlign = 'left';
     
         // Заголовок
-        ctx.font = 'bold 65px Roboto';
-        ctx.fillText(`${playerName}`, 300, 100);
+        ctx.save();
+ctx.textAlign = 'center';
+
+// Рассчитываем позицию по X
+const centerX = canvas.width / 2;  // canvas - ваш объект холста
+
+// Рисуем текст
+ctx.font = 'bold 65px Roboto';
+ctx.fillText(playerName, centerX, 100);
+ctx.restore();
     
         // Основная статистика
         ctx.font = '24px Roboto';
