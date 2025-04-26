@@ -65,3 +65,5 @@ VOLUME /app/data
 
 # 9. Запуск приложения
 CMD ["node", "dist/index.js"]
+
+RUN ls -la /app/fonts
