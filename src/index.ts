@@ -98,7 +98,7 @@ class ArmaBot {
                         @rank := @rank + 1 AS top_rank
                     FROM 
                         players_stats p
-                        JOIN player_connections c ON p.player_id = c.player_id
+                        JOIN players_info c ON p.player_id = c.player_id
                         CROSS JOIN (SELECT @rank := 0) r
                     WHERE 
                         p.playedTime > 60
