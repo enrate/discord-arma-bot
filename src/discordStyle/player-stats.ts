@@ -159,19 +159,29 @@ export class PlayersStats {
             const connection = await pool.getConnection();
             
             try {
-                const [connectionRows] = await connection.query<RowDataPacket[]>(
+                const [infoRows] = await connection.query<RowDataPacket[]>(
                     `SELECT * 
-                    FROM player_connections 
+                    FROM players_info 
                     WHERE player_name = ? 
-                    ORDER BY timestamp_last_connection DESC 
                     LIMIT 1`,
                     [playerName]
                 );
                 
+                if (infoRows.length === 0) {
+                    throw new Error('Игрок не найден в истории подключений');
+                }
+                const [connectionRows] = await connection.query<RowDataPacket[]>(
+                    `SELECT *
+            FROM player_connections pc
+            JOIN players_info pi ON pc.id = pi.connection_id
+            WHERE pi.player_name = ?`,
+            [playerName]
+                );
+
                 if (connectionRows.length === 0) {
                     throw new Error('Игрок не найден в истории подключений');
                 }
-                
+
                 const playerId = connectionRows[0].player_id;
                 
                 const [statsRows] = await connection.query<RowDataPacket[]>(
