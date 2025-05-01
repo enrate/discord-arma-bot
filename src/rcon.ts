@@ -140,7 +140,7 @@ export class Rcon {
                 }
                 targetPlayer = playersRows[0].player_id;
             } catch (error) {
-                throw new Error(`Ошибка при поиске UID игрока по имени в БД: ${error}`)
+                throw new Error(`Ошибка при поиске UID игрока по имени в БД:\n ${error}`)
             }
         }
 

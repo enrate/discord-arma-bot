@@ -109,6 +109,7 @@ export class BanForms {
             console.error('Ошибка бана:', error);
             await interaction.reply({ 
                 content: `❌ Ошибка бана: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                flags: 'Ephemeral',
             });
 
             setTimeout(async () => {
@@ -117,7 +118,7 @@ export class BanForms {
                 } catch(e) { 
                     console.error('Ошибка очистки:', e); 
                 }
-            }, 5000);
+            }, 10000);
         }
     }
 
@@ -152,7 +153,7 @@ export class BanForms {
                 } catch(e) { 
                     console.error('Ошибка очистки:', e); 
                 }
-            }, 5000);
+            }, 10000);
         }
     }
 

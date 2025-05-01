@@ -138,7 +138,7 @@ export class FindPlayerNickName {
 
     public static async handleSearchNickNameRequest(interaction: ModalSubmitInteraction) {
         try {
-            await interaction.deferReply({ ephemeral: true });
+            await interaction.deferReply({ flags: 'Ephemeral' });
             
             const playerId = interaction.fields.getTextInputValue('player_id');
             const connection = await pool.getConnection();
@@ -169,7 +169,7 @@ export class FindPlayerNickName {
         } catch (error) {
             console.error('Ошибка поиска:', error);
             await interaction.editReply({
-                content: `❌ Ошибка: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`
+                content: `❌ Ошибка: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`,
             });
         }
         

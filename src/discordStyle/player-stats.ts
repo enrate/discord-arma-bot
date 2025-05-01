@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, TextChannel, ModalSubmitInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, Message, PermissionFlagsBits } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, Interaction, EmbedBuilder, TextChannel, ModalSubmitInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, Message, PermissionFlagsBits } from 'discord.js';
 import {pool} from '../db'; // Убраны фигурные скобки
 import { RowDataPacket } from 'mysql2';
 import dayjs from 'dayjs';
@@ -146,6 +146,7 @@ export class PlayersStats {
                         .setCustomId('player_name')
                         .setLabel("Введите ник игрока")
                         .setStyle(TextInputStyle.Short)
+                        .setPlaceholder("Nickname")
                         .setRequired(true)
                 )
             );
@@ -153,7 +154,7 @@ export class PlayersStats {
 
     public static async handleStatsRequest(interaction: ModalSubmitInteraction) {
         try {
-            await interaction.deferReply({ ephemeral: true });
+            await interaction.deferReply({ flags: 'Ephemeral' });
             
             const playerName = interaction.fields.getTextInputValue('player_name');
             const connection = await pool.getConnection();
@@ -171,9 +172,91 @@ export class PlayersStats {
                 }
 
                 if (infoRows.length > 1) {
-                    throw new Error(`Найдено несколько игроков с таким ником:\n${infoRows.map((value) => { return {'playerId': value.player_id, 'playerName': value.player_name }})}`)
+                    // Создаем кнопки для выбора игрока
+                    const row = new ActionRowBuilder<ButtonBuilder>()
+                        .addComponents(
+                            infoRows.map((player, index) => 
+                                new ButtonBuilder()
+                                    .setCustomId(`select_player_${player.player_id}`)
+                                    .setLabel(`Игрок ${index + 1}`)
+                                    .setStyle(ButtonStyle.Primary)
+                            )
+                        );
+    
+                    // Отправляем сообщение с кнопками
+                    const reply = await interaction.reply({
+                        content: `Найдено несколько игроков с ником "${playerName}":`,
+                        components: [row],
+                        ephemeral: true
+                    });
+    
+                    // Ожидаем выбор игрока в течение 60 секунд
+                    const filter = (i: Interaction) => {
+                        // Проверяем что это именно кнопка
+                        if (!i.isButton()) return false;
+                        
+                        // Проверяем пользователя и префикс кастомного ID
+                        return i.user.id === interaction.user.id && 
+                               i.customId.startsWith('select_player_');
+                    };
+                    
+                    try {
+                        const response = await reply.awaitMessageComponent<ComponentType.Button>({
+                            filter,
+                            time: 60000
+                        });
+    
+                        // Извлекаем player_id из customId
+                        const playerId = response.customId.split('_')[2];
+                        
+                        // Удаляем кнопки
+                        await response.update({
+                            content: 'Загрузка статистики...',
+                            components: []
+                        });
+    
+                        // Далее ваша логика обработки выбранного игрока
+                        const [connectionRows] = await connection.query<RowDataPacket[]>(
+                            `SELECT *
+                            FROM player_connections pc
+                            JOIN players_info pi ON pc.id = pi.connection_id
+                            WHERE pi.player_id = ?`,
+                            [playerId]
+                        );
+    
+                        if (connectionRows.length === 0) {
+                            throw new Error('Игрок не найден в истории подключений');
+                        }
+                                
+                        const [statsRows] = await connection.query<RowDataPacket[]>(
+                            `SELECT * FROM players_stats 
+                            WHERE player_id = ?`,
+                            [playerId]
+                        );
+                        
+                        if (statsRows.length === 0) {
+                            throw new Error('Статистика игрока не найдена');
+                        }
+                        
+                        const playerStats = {connection: connectionRows[0], stats: statsRows[0]};
+            
+            const embed = await this.createStatsEmbed(playerName, playerStats);
+            const imageBuffer = await this.createStatsImage(playerName, playerStats);
+        
+                        await interaction.editReply({ embeds: [embed], files: [{
+                            attachment: imageBuffer,
+                            name: 'stats.png'
+                        }] });
+    
+                    } catch (error) {
+                        await interaction.editReply({
+                            content: 'Время выбора истекло',
+                            components: []
+                        });
+                    }
                 }
-                
+                if (infoRows.length === 1) {
+
                 const [connectionRows] = await connection.query<RowDataPacket[]>(
                     `SELECT *
             FROM player_connections pc
@@ -207,7 +290,7 @@ export class PlayersStats {
                     attachment: imageBuffer,
                     name: 'stats.png'
                 }] });
-    
+            }
             } finally {
                 connection.release();
             }
