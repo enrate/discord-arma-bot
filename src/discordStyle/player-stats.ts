@@ -178,7 +178,7 @@ export class PlayersStats {
                             infoRows.map((player, index) => 
                                 new ButtonBuilder()
                                     .setCustomId(`select_player_${player.player_id}`)
-                                    .setLabel(`Игрок ${index + 1}`)
+                                    .setLabel(`Игрок ${player.player_id}`)
                                     .setStyle(ButtonStyle.Primary)
                             )
                         );
@@ -242,7 +242,7 @@ export class PlayersStats {
             const embed = await this.createStatsEmbed(playerName, playerStats);
             const imageBuffer = await this.createStatsImage(playerName, playerStats);
         
-                        await interaction.editReply({ embeds: [embed], files: [{
+                        await interaction.editReply({content: '', embeds: [embed], files: [{
                             attachment: imageBuffer,
                             name: 'stats.png'
                         }] });
