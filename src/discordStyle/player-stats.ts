@@ -162,14 +162,18 @@ export class PlayersStats {
                 const [infoRows] = await connection.query<RowDataPacket[]>(
                     `SELECT * 
                     FROM players_info 
-                    WHERE player_name = ? 
-                    LIMIT 1`,
+                    WHERE player_name = ?`,
                     [playerName]
                 );
                 
                 if (infoRows.length === 0) {
                     throw new Error('Игрок не найден в истории подключений');
                 }
+
+                if (infoRows.length > 1) {
+                    throw new Error(`Найдено несколько игроков с таким ником:\n${infoRows.map((value) => { return {'playerId': value.player_id, 'playerName': value.player_name }})}`)
+                }
+                
                 const [connectionRows] = await connection.query<RowDataPacket[]>(
                     `SELECT *
             FROM player_connections pc

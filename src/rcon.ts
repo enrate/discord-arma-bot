@@ -125,19 +125,20 @@ export class Rcon {
         if (!isUUIDv4(targetPlayer)) {
             const connection = await pool.getConnection();
             try {
-                const [connectionRows] = await connection.query<RowDataPacket[]>(
+                const [playersRows] = await connection.query<RowDataPacket[]>(
                     `SELECT player_id 
-                    FROM player_connections 
-                    WHERE player_name = ? 
-                    ORDER BY timestamp_last_connection DESC 
-                    LIMIT 1`,
+                    FROM players_info
+                    WHERE player_name = ?`,
                     [targetPlayer]
                 );
                 
-                if (connectionRows.length === 0) {
+                if (playersRows.length === 0) {
                     throw new Error('Игрок не найден в истории подключений');
                 }
-                targetPlayer = connectionRows[0].player_id;
+                if (playersRows.length > 1) {
+                    throw new Error(`Найдено несколько игроков с таким ником:\n${playersRows.map((value) => { return {'playerId': value.player_id, 'playerName': value.player_name }})}`)
+                }
+                targetPlayer = playersRows[0].player_id;
             } catch (error) {
                 throw new Error("Ошбка при поиске UID игрока по имени в БД")
             }
@@ -172,21 +173,22 @@ export class Rcon {
         if (!isUUIDv4(targetPlayer)) {
             const connection = await pool.getConnection();
             try {
-                const [connectionRows] = await connection.query<RowDataPacket[]>(
+                const [playersRows] = await connection.query<RowDataPacket[]>(
                     `SELECT player_id 
-                    FROM player_connections 
-                    WHERE player_name = ? 
-                    ORDER BY timestamp_last_connection DESC 
-                    LIMIT 1`,
+                    FROM players_info 
+                    WHERE player_name = ?`,
                     [targetPlayer]
                 );
                 
-                if (connectionRows.length === 0) {
+                if (playersRows.length === 0) {
                     throw new Error('Игрок не найден в истории подключений');
                 }
-                targetPlayer = connectionRows[0].player_id;
+                if (playersRows.length > 1) {
+                    throw new Error(`Найдено несколько игроков с таким ником:\n${playersRows.map((value) => { return {'playerId': value.player_id, 'playerName': value.player_name }})}`)
+                }
+                targetPlayer = playersRows[0].player_id;
             } catch (error) {
-                throw new Error("Ошбка при поиске UID игрока по имени в БД")
+                throw new Error("Ошибка при поиске UID игрока по имени в БД")
             }
         }
 

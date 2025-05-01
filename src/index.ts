@@ -6,7 +6,7 @@ import { ServerConfig } from './types';
 import { PlayersManager } from './discordStyle/players-list';
 import { StatusManager } from './discordStyle/status';
 import { PlayersStats } from './discordStyle/player-stats';
-import { pool } from './db';
+import { FindPlayerNickName } from './discordStyle/find-player-nick-name';
 
 
 class ArmaBot {
@@ -26,6 +26,7 @@ class ArmaBot {
         await this.sendInputForm(); // Добавляем отправку формы при инициализацииs
         await this.setupStatsChannel(); // Добавляем инициализацию канала статистики
         await this.setupGlobalStatsChannel();
+        await this.setupFindNickNameChannel();
         // await this.updateTopPlayers();
         this.startUpdateLoop();
     }
@@ -51,6 +52,24 @@ class ArmaBot {
             console.log('Канал статистики успешно настроен');
         } catch (error) {
             console.error('Ошибка настройки канала статистики:', error);
+        }
+    }
+    private async setupFindNickNameChannel() {
+        try {
+            if (!this.discordClient) {
+                throw new Error('Discord клиент не инициализирован');
+            }
+
+            const channel = await this.discordClient.channels.fetch(process.env.FIND_NICKNAME_CHANNEL_ID!);
+
+            if (!(channel instanceof TextChannel)) {
+                throw new Error('Канал поиска ника не найден или не является текстовым');
+            }
+
+            await FindPlayerNickName.initialize(channel);
+            console.log('Канал поиска ника успешно настроен');
+        } catch (error) {
+            console.error('Ошибка настройки канала поиска ника:', error);
         }
     }
     private async setupGlobalStatsChannel() {
@@ -84,39 +103,6 @@ class ArmaBot {
         await PlayersManager.update(this.discordClient, this.config.discord.channelId);
     }
 
-    // private async updateTopPlayers() {
-    //     const connection = await pool.getConnection();
-    //     try {
-    //         await connection.beginTransaction();
-    
-    //         // Используем подзапрос вместо CTE
-    //         await connection.query(`
-    //             UPDATE players_stats ps
-    //             JOIN (
-    //                 SELECT 
-    //                     p.player_id,
-    //                     @rank := @rank + 1 AS top_rank
-    //                 FROM 
-    //                     players_stats p
-    //                     JOIN players_info c ON p.player_id = c.player_id
-    //                     CROSS JOIN (SELECT @rank := 0) r
-    //                 WHERE 
-    //                     p.playedTime > 60
-    //                 ORDER BY 
-    //                     p.ppm DESC
-    //             ) AS ranks ON ps.player_id = ranks.player_id
-    //             SET ps.top = ranks.top_rank
-    //         `);
-    
-    //         await connection.commit();
-    //     } catch (error) {
-    //         await connection.rollback();
-    //         console.error('Error updating top players:', error);
-    //         throw error; // Перебрасываем ошибку для обработки выше
-    //     } finally {
-    //         connection.release();
-    //     }
-    // }
 
     private startUpdateLoop() {
         // Обновление статуса каждую минуту
@@ -124,8 +110,6 @@ class ArmaBot {
         
         // Обновление списка игроков каждые 2 минуты
         setInterval(() => this.updatePlayerList(), 120_000);
-
-        // setInterval(() => this.updateTopPlayers(), 60_000 * 60)
         
         Promise.all([
             this.updateStatus(),
@@ -224,9 +208,19 @@ private setupFormHandlers() {
                 await interaction.showModal(PlayersStats.createStatsModal());
                 return;
             }
+
+            if (interaction.isButton() && interaction.customId === 'open_find_nickname_form') {
+                await interaction.showModal(FindPlayerNickName.createSearchNicnNameModal());
+                return;
+            }
             
             if (interaction.isModalSubmit() && interaction.customId === 'stats_form') {
                 await PlayersStats.handleStatsRequest(interaction);
+                return;
+            }
+
+            if (interaction.isModalSubmit() && interaction.customId === 'find_nickname_form') {
+                await FindPlayerNickName.handleSearchNickNameRequest(interaction);
                 return;
             }
 
