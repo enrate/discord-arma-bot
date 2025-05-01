@@ -143,7 +143,7 @@ export class BanForms {
             console.error('Ошибка разбана:', error);
             await interaction.reply({ 
                 content: `❌ Ошибка разбана: ${error instanceof Error ? error.message : 'Unknown error'}`,
-                ephemeral: true,
+                flags: 'Ephemeral',
             });
 
             setTimeout(async () => {
