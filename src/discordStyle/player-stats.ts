@@ -4,6 +4,7 @@ import { RowDataPacket } from 'mysql2';
 import dayjs from 'dayjs';
 import { createCanvas, Image, loadImage, registerFont } from 'canvas';
 import path from 'path';
+import { getSteamAvatar } from '../helper';
 
 const fontsDir = path.join(process.cwd(), 'fonts');
 const imagesDir = path.join(process.cwd(), 'images');
@@ -173,21 +174,50 @@ export class PlayersStats {
 
                 if (infoRows.length > 1) {
                     // Создаем кнопки для выбора игрока
-                    const row = new ActionRowBuilder<ButtonBuilder>()
-                        .addComponents(
-                            infoRows.map((player, index) => 
-                                new ButtonBuilder()
-                                    .setCustomId(`select_player_${player.player_id}`)
-                                    .setLabel(`Игрок ${player.player_id}`)
-                                    .setStyle(ButtonStyle.Primary)
-                            )
-                        );
-    
-                    // Отправляем сообщение с кнопками
-                    const reply = await interaction.editReply({
-                        content: `Найдено несколько игроков с ником "${playerName}":`,
-                        components: [row]
-                    });
+                    
+                    const embeds = [];
+const buttons = [];
+
+for (const player of infoRows) {
+    // Получаем аватарку
+    let avatarUrl = null; // Дефолтный аватар
+    if (player.platformName == 'Steam') {
+        avatarUrl = (await getSteamAvatar(player.platformId))?.url
+    }
+
+    // Создаем эмбед с аватаром
+    const embed = new EmbedBuilder()
+        .setTitle(player.player_name)
+        .setImage(avatarUrl)
+        .addFields(
+            { name: 'Player ID', value: player.player_id || 'Неизвестно' },
+            { name: 'Steam ID64', value: player.platformName == 'Steam' ? `https://steamcommunity.com/profiles/${player.platformId}` : 'Неизвестно'}
+    )
+        .setColor('#0099ff');
+
+    embeds.push(embed);
+
+    // Создаем кнопку
+    const button = new ButtonBuilder()
+        .setCustomId(`select_player_${player.player_id}`)
+        .setLabel(`Выбрать ${player.player_name}`)
+        .setStyle(ButtonStyle.Primary);
+
+    buttons.push(button);
+}
+const actionRows = [];
+while (buttons.length > 0) {
+    actionRows.push(
+        new ActionRowBuilder<ButtonBuilder>()
+            .addComponents(buttons.splice(0, 5))
+    );
+}
+const reply = await interaction.editReply({
+    content: `Найдено несколько игроков с ником "${playerName}":`,
+    embeds: embeds,
+    components: actionRows
+});
+
     
                     // Ожидаем выбор игрока в течение 60 секунд
                     const filter = (i: Interaction) => {
@@ -207,7 +237,8 @@ export class PlayersStats {
     
                         // Извлекаем player_id из customId
                         const playerId = response.customId.split('_')[2];
-                        
+
+                        const platformData = infoRows.find((info) => info.player_id == playerId)
                         // Удаляем кнопки
                         await response.update({
                             content: 'Загрузка статистики...',
@@ -239,8 +270,8 @@ export class PlayersStats {
                         
                         const playerStats = {connection: connectionRows[0], stats: statsRows[0]};
             
-            const embed = await this.createStatsEmbed(playerName, playerStats);
-            const imageBuffer = await this.createStatsImage(playerName, playerStats);
+            const embed = await this.createStatsEmbed(playerName, playerStats, platformData);
+            const imageBuffer = await this.createStatsImage(playerName, playerStats, platformData);
         
                         await interaction.editReply({content: '', embeds: [embed], files: [{
                             attachment: imageBuffer,
@@ -250,6 +281,7 @@ export class PlayersStats {
                     } catch (error) {
                         await interaction.editReply({
                             content: 'Время выбора истекло',
+                            embeds: [],
                             components: []
                         });
                     }
@@ -282,8 +314,8 @@ export class PlayersStats {
                 
                 const playerStats = {connection: connectionRows[0], stats: statsRows[0]};
     
-    const embed = await this.createStatsEmbed(playerName, playerStats);
-    const imageBuffer = await this.createStatsImage(playerName, playerStats);
+    const embed = await this.createStatsEmbed(playerName, playerStats, infoRows);
+    const imageBuffer = await this.createStatsImage(playerName, playerStats, infoRows);
 
                 await interaction.editReply({ embeds: [embed], files: [{
                     attachment: imageBuffer,
@@ -310,7 +342,7 @@ export class PlayersStats {
         }, 60000);
     }
 
-    private static async createStatsImage(playerName: string, data: any): Promise<Buffer> {
+    private static async createStatsImage(playerName: string, data: any, platformImage: any): Promise<Buffer> {
         // Создаем холст
         const canvas = createCanvas(800, 700);
         const ctx = canvas.getContext('2d');
@@ -324,11 +356,13 @@ export class PlayersStats {
     
         try {
             const avatar = await loadImage(data.avatarURL || path.join(imagesDir, 'default-avatar.png'));
+            const platformAvatar = await loadImage(platformImage?.buffer || path.join(imagesDir, 'default-avatar-platform.png'));
             
             // Сохраняем текущие настройки контекста
             ctx.save();
             
             // Устанавливаем прозрачность (0.0 - полностью прозрачный, 1.0 - непрозрачный)
+            ctx.drawImage(platformAvatar, 50, 25, 100, 100);
             ctx.globalAlpha = 0.5;
             
             ctx.drawImage(avatar, 400, 0, 800, 800);
@@ -401,13 +435,14 @@ ctx.restore();
             return canvas.toBuffer('image/png');
         }
 
-    private static async createStatsEmbed(playerName: string, data: any): Promise<EmbedBuilder> {        
+    private static async createStatsEmbed(playerName: string, data: any, info: any): Promise<EmbedBuilder> {        
         return new EmbedBuilder()
             .setTitle(`Статистика игрока: ${playerName}`)
             .setColor(0x0099FF)
             .setImage('attachment://stats.png')
             .addFields(
-                { name: 'Player ID', value: data.connection.player_id || 'Неизвестно' }
+                { name: 'Player ID', value: data.connection.player_id || 'Неизвестно' },
+                { name: 'Steam ID64', value: info.platformName == 'Steam' ? `https://steamcommunity.com/profiles/${info.platformId}` : 'Неизвестно'}
             )
             .setTimestamp()
             .setFooter({ text: 'Статистика обновлена' });

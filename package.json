@@ -10,6 +10,7 @@
     "@sapphire/snowflake": "^3.5.5",
     "@senfo/battleye": "^2.2.2",
     "a2s": "^1.0.2",
+    "axios": "^1.9.0",
     "basic-ftp": "^5.0.5",
     "canvas": "^3.1.0",
     "child-process-promise": "^2.2.1",
