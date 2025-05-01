@@ -314,8 +314,8 @@ const reply = await interaction.editReply({
                 
                 const playerStats = {connection: connectionRows[0], stats: statsRows[0]};
     
-    const embed = await this.createStatsEmbed(playerName, playerStats, infoRows);
-    const imageBuffer = await this.createStatsImage(playerName, playerStats, infoRows);
+    const embed = await this.createStatsEmbed(playerName, playerStats, infoRows[0]);
+    const imageBuffer = await this.createStatsImage(playerName, playerStats, infoRows[0]);
 
                 await interaction.editReply({ embeds: [embed], files: [{
                     attachment: imageBuffer,
