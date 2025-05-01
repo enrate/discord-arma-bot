@@ -145,7 +145,7 @@ export class FindPlayerNickName {
             try {
                 const [infoRows] = await connection.query<RowDataPacket[]>(
                     `SELECT player_name 
-                    FROM player_connections 
+                    FROM temp_player_events 
                     WHERE player_id = ?`,
                     [playerId]
                 );
