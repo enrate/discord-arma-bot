@@ -130,6 +130,7 @@ export class FindPlayerNickName {
                         .setCustomId('player_id')
                         .setLabel("Введите id игрока")
                         .setStyle(TextInputStyle.Short)
+                        .setPlaceholder("76ef671f-eae2-4988-9a49-8e4e8bdb90e2")
                         .setRequired(true)
                 )
             );
@@ -154,10 +155,9 @@ export class FindPlayerNickName {
                     throw new Error('Игрок не найден в истории подключений');
                 }
                 
-                console.log(infoRows)
                 const embed = new EmbedBuilder()
                 .setTitle(this.EMBED_TITLE)
-                .setDescription(infoRows.join('\n'))
+                .setDescription(infoRows.map((player) => { return `${player.player_name}\n`}).join(''))
                 .setColor(0x00FF00);
 
                 await interaction.editReply({ embeds: [embed] });
