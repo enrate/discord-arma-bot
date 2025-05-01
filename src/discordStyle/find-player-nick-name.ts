@@ -154,6 +154,7 @@ export class FindPlayerNickName {
                     throw new Error('Игрок не найден в истории подключений');
                 }
                 
+                console.log(infoRows)
                 const embed = new EmbedBuilder()
                 .setTitle(this.EMBED_TITLE)
                 .setDescription(infoRows.join('\n'))
