@@ -110,6 +110,14 @@ export class BanForms {
             await interaction.reply({ 
                 content: `❌ Ошибка бана: ${error instanceof Error ? error.message : 'Unknown error'}`,
             });
+
+            setTimeout(async () => {
+                try { 
+                    await interaction.deleteReply(); 
+                } catch(e) { 
+                    console.error('Ошибка очистки:', e); 
+                }
+            }, 5000);
         }
     }
 
@@ -136,6 +144,14 @@ export class BanForms {
             await interaction.reply({ 
                 content: `❌ Ошибка разбана: ${error instanceof Error ? error.message : 'Unknown error'}`,
             });
+            
+            setTimeout(async () => {
+                try { 
+                    await interaction.deleteReply(); 
+                } catch(e) { 
+                    console.error('Ошибка очистки:', e); 
+                }
+            }, 5000);
         }
     }
 
