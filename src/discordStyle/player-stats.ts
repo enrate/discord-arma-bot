@@ -383,19 +383,10 @@ const reply = await interaction.editReply({
         ctx.textAlign = 'left';
     
         // Заголовок
-        
-        ctx.save();
-ctx.textAlign = 'center';
+await this.drawAdaptiveText(ctx, playerName, 500);
 
-// Рассчитываем позицию по X
+// // Рассчитываем позицию по X
 const centerX = canvas.width / 2;  // canvas - ваш объект холста
-
-// Рисуем текст
-ctx.font = 'bold 65px Roboto';
-        
-            ctx.fillText(playerName, centerX, 100);
-    
-ctx.restore();
     
         // Основная статистика
         ctx.font = '24px Roboto';
@@ -450,5 +441,50 @@ ctx.restore();
             )
             .setTimestamp()
             .setFooter({ text: 'Статистика обновлена' });
+    }
+    private static async drawAdaptiveText(ctx:any, text:any, maxWidth:any, initialFontSize = 65, minFontSize = 20) {
+        let fontSize = initialFontSize;
+        const centerX = ctx.canvas.width / 2;
+        const yPosition = 100;
+        
+        // Сохраняем исходные настройки контекста
+        ctx.save();
+        
+        do {
+            // Устанавливаем текущий размер шрифта
+            ctx.font = `bold ${fontSize}px Roboto`;
+            
+            // Измеряем ширину текста
+            const textWidth = ctx.measureText(text).width;
+            
+            // Если текст помещается - выходим из цикла
+            if(textWidth <= maxWidth) break;
+            
+            // Уменьшаем размер шрифта
+            fontSize -= 2;
+            
+        } while(fontSize > minFontSize);
+    
+        // Если достигнут минимальный размер - обрезаем текст
+        if(fontSize <= minFontSize) {
+            text = this.truncateText(ctx, text, maxWidth);
+        }
+    
+        // Рисуем текст с финальным размером
+        ctx.textAlign = 'center';
+        ctx.fillText(text, centerX, yPosition);
+        
+        // Восстанавливаем исходные настройки
+        ctx.restore();
+    }
+    private static async truncateText(ctx:any, text:any, maxWidth:any) {
+        const ellipsis = '...';
+        let truncated = text;
+        
+        while(ctx.measureText(truncated + ellipsis).width > maxWidth && truncated.length > 0) {
+            truncated = truncated.slice(0, -1);
+        }
+        
+        return truncated + ellipsis;
     }
 }
