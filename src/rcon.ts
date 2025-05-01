@@ -184,7 +184,7 @@ export class Rcon {
                     throw new Error('Игрок не найден в истории подключений');
                 }
                 if (playersRows.length > 1) {
-                    throw new Error(`Найдено несколько игроков с таким ником:\n${playersRows.map((value) => { return {'playerId': value.player_id, 'playerName': value.player_name }}).join('\n')}`)
+                    throw new Error(`Найдено несколько игроков с таким ником:\n${playersRows.map((value) => value.player_id).join('\n')}`)
                 }
                 targetPlayer = playersRows[0].player_id;
             } catch (error) {
