@@ -200,7 +200,7 @@ for (const player of infoRows) {
     // Создаем кнопку
     const button = new ButtonBuilder()
         .setCustomId(`select_player_${player.player_id}`)
-        .setLabel(`Выбрать ${player.player_name}`)
+        .setLabel(`Выбрать ${player.player_id}`)
         .setStyle(ButtonStyle.Primary);
 
     buttons.push(button);
