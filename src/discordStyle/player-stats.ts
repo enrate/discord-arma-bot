@@ -184,10 +184,9 @@ export class PlayersStats {
                         );
     
                     // Отправляем сообщение с кнопками
-                    const reply = await interaction.reply({
+                    const reply = await interaction.editReply({
                         content: `Найдено несколько игроков с ником "${playerName}":`,
-                        components: [row],
-                        ephemeral: true
+                        components: [row]
                     });
     
                     // Ожидаем выбор игрока в течение 60 секунд
