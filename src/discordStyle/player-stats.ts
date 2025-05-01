@@ -342,7 +342,11 @@ const reply = await interaction.editReply({
         }, 60000);
     }
 
-    private static async createStatsImage(playerName: string, data: any, platformImage: any): Promise<Buffer> {
+    private static async createStatsImage(playerName: string, data: any, platformData: any): Promise<Buffer> {
+        let platformImage = null;
+        if (platformData.platformName == 'Steam') {
+            platformImage = await getSteamAvatar(platformData.platformId)
+        }
         // Создаем холст
         const canvas = createCanvas(800, 700);
         const ctx = canvas.getContext('2d');
