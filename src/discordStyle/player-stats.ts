@@ -348,15 +348,15 @@ const reply = await interaction.editReply({
             platformImage = await getSteamAvatar(platformData.platformId)
         }
         // Создаем холст
-        const canvas = createCanvas(800, 800);
+        const canvas = createCanvas(800, 750);
         const ctx = canvas.getContext('2d');
     
         // Рисуем фон
-        const gradient = ctx.createLinearGradient(0, 0, 800, 700);
+        const gradient = ctx.createLinearGradient(0, 0, 800, 750);
         gradient.addColorStop(0, '#1a1a2e');
         gradient.addColorStop(1, '#16213e');
         ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, 800, 700);
+        ctx.fillRect(0, 0, 800, 750);
     
         try {
             const avatar = await loadImage(data.avatarURL || path.join(imagesDir, 'default-avatar.png'));
