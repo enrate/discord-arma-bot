@@ -8,6 +8,8 @@
       "esModuleInterop": true,
       "skipLibCheck": true,
       "lib": ["ES2020.BigInt", "ES2020"],
-      "types": ["node"]
+      "types": ["node"],
+      "noImplicitAny": false,
+      "strictNullChecks": false
     }
   }
