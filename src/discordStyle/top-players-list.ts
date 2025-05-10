@@ -46,7 +46,7 @@ export class TopPlayersManager {
 
                 // Обновляем сообщение
                 const listPlayers = topPlayers.map(p => {
-    const kd = p.deaths > 0 ? (p.kills / p.deaths).toFixed(2) : '∞';
+    const kd = (p.kills / p.deaths);
     
     // Иконки для первых трех мест
     const positionIcon = 
@@ -56,13 +56,13 @@ export class TopPlayersManager {
         `**${p.top}.**`;
 
     // Цветовые акценты для K/D
-    const kdDisplay = p.kd >= 4 ? `🔥${p.kd}` : 
-                     p.kd >= 2 ? `⚡${p.kd}` : 
-                     p.kd >= 1 ? `🟢${p.kd}` : 
+    const kdDisplay = kd >= 4 ? `🔥${kd.toFixed(2)}` : 
+                     kd >= 2 ? `⚡${kd.toFixed(2)}` : 
+                     kd >= 1 ? `🟢${kd.toFixed(2)}` : 
                      `🔻${p.kd}`;
 
     return `${positionIcon} **${p.player_name}**\n` +
-           `⚡ELO: **${p.ppm.toFixed(2)}** | ` +
+           `⚡ELO: **${p.ppm}** | ` +
            `⚔️K/D: ${kdDisplay} | ` +
            `🎯${p.kills} | ☠️${p.deaths}`;
 });
