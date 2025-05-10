@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, TextChannel, ModalSubmitInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, Message, PermissionFlagsBits } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, TextChannel, ModalSubmitInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, Message, PermissionFlagsBits, ActionRowComponent } from 'discord.js';
 import {pool} from '../db'; // Убраны фигурные скобки
 import { RowDataPacket } from 'mysql2';
 
@@ -86,7 +86,7 @@ export class FindPlayerNickName {
                 const isFromBot = msg.author.id === channel.client.user?.id;
                 const hasCorrectContent = msg.content === this.SEARCH_NICKNAME_CONTENT;
                 const hasCorrectButton = msg.components.some(c => 
-                    c.components.some(b => b.customId === 'open_find_nickname_form')
+                    c.components.some((b: ActionRowComponent) => b.customId === 'open_find_nickname_form')
                 );
                 
                 if (isFromBot) {
