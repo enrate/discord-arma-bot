@@ -44,11 +44,17 @@ export class TopPlayersManager {
                     throw new Error('Игрок не найден в истории подключений');
                 }
 
+                const listPlayers = topPlayers.map(p => {
+                    return `${p.top} - ${p.name} | ELO: ${p.ppm} | K/D ${(p.kills/p.deaths)} | Most kills: ${p.kills} | Most deaths: ${p.deaths}`
+                })
+                console.log(listPlayers)
+                // .filter(name => name && name.trim());
+
 
                 // Обновляем сообщение
                 const embed = new EmbedBuilder()
                     .setTitle(this.EMBED_TITLE)
-                    .setDescription(topPlayers.length > 0 ? topPlayers.map((player) => player.name).join('\n') : 'Сейчас никого нет')
+                    .setDescription(topPlayers.length > 0 ? topPlayers.join('\n') : 'Сейчас никого нет')
                     .setColor(0x00FF00);
 
                 await message.edit({ embeds: [embed] });
