@@ -44,15 +44,35 @@ export class TopPlayersManager {
                     throw new Error('Игрок не найден в истории подключений');
                 }
 
-                const listPlayers = topPlayers.map(p => {
-                    return `${p.top} - ${p.player_name} | ELO: ${p.ppm} | K/D ${(p.kills/p.deaths).toFixed(2)} | Most kills: ${p.kills} | Most deaths: ${p.deaths}`
-                })
-
                 // Обновляем сообщение
-                const embed = new EmbedBuilder()
-                    .setTitle(this.EMBED_TITLE)
-                    .setDescription(topPlayers.length > 0 ? listPlayers.join('\n') : 'Сейчас никого нет')
-                    .setColor(0x00FF00);
+                const listPlayers = topPlayers.map(p => {
+    const kd = p.deaths > 0 ? (p.kills / p.deaths).toFixed(2) : '∞';
+    
+    // Иконки для первых трех мест
+    const positionIcon = 
+        p.top === 1 ? '🥇' : 
+        p.top === 2 ? '🥈' : 
+        p.top === 3 ? '🥉' : 
+        `**${p.top}.**`;
+
+    // Цветовые акценты для K/D
+    const kdDisplay = p.kd >= 4 ? `🔥${p.kd}` : 
+                     p.kd >= 2 ? `⚡${p.kd}` : 
+                     p.kd >= 1 ? `🟢${p.kd}` : 
+                     `🔻${p.kd}`;
+
+    return `${positionIcon} **${p.player_name}**\n` +
+           `⚡ELO: **${p.ppm.toFixed(2)}** | ` +
+           `⚔️K/D: ${kdDisplay} | ` +
+           `🎯${p.kills} | ☠️${p.deaths}`;
+});
+
+const embed = new EmbedBuilder()
+    .setTitle('🏆 ТОП-20 ИГРОКОВ 🏆')
+    .setDescription(listPlayers.length > 0 ? listPlayers.join('\n\n') : '🎮 Сейчас никого нет')
+    .setColor(0xFFD700)
+    .setFooter({ text: '⚔️ - убийства/смерти | ⚡ - рейтинг эффективности' })
+    .setThumbnail('https://i.imgur.com/xyz123.png'); // URL иконки для оформления
 
                 await message.edit({ embeds: [embed] });
 
