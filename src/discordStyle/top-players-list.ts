@@ -44,11 +44,10 @@ export class TopPlayersManager {
                     throw new Error('Игрок не найден в истории подключений');
                 }
 
-                const listPlayers = (topPlayers.map(p => {
+                const listPlayers = topPlayers.map(p => {
                     return `${p.top} - ${p.player_name} | ELO: ${p.ppm} | K/D ${(p.kills/p.deaths).toFixed(2)} | Most kills: ${p.kills} | Most deaths: ${p.deaths}`
-                })).entries()
+                })
                 console.log(listPlayers)
-                // .filter(name => name && name.trim());
 
 
                 // Обновляем сообщение
