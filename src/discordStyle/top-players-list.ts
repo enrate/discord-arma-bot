@@ -62,9 +62,9 @@ export class TopPlayersManager {
                      `🔻${p.kd}`;
 
     return `${positionIcon} **${p.player_name}**\n` +
-           `⚡ELO: **${p.ppm}** | ` +
-           `⚔️K/D: ${kdDisplay} | ` +
-           `🎯${p.kills} | ☠️${p.deaths}`;
+           `⚡ELO: **${p.ppm}** |   ` +
+           `⚔️K/D: ${kdDisplay} |   ` +
+           `🎯${p.kills}   |   ☠️${p.deaths}`;
 });
 
 const embed = new EmbedBuilder()
@@ -72,7 +72,7 @@ const embed = new EmbedBuilder()
     .setDescription(listPlayers.length > 0 ? listPlayers.join('\n\n') : '🎮 Сейчас никого нет')
     .setColor(0xFFD700)
     .setFooter({ text: '⚔️ - убийства/смерти | ⚡ - рейтинг эффективности' })
-    .setThumbnail('https://i.imgur.com/xyz123.png'); // URL иконки для оформления
+    .setThumbnail('https://i.imgur.com/tyz2EAE.png'); // URL иконки для оформления
 
                 await message.edit({ embeds: [embed] });
 
