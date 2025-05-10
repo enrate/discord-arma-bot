@@ -47,13 +47,11 @@ export class TopPlayersManager {
                 const listPlayers = topPlayers.map(p => {
                     return `${p.top} - ${p.player_name} | ELO: ${p.ppm} | K/D ${(p.kills/p.deaths).toFixed(2)} | Most kills: ${p.kills} | Most deaths: ${p.deaths}`
                 })
-                console.log(listPlayers)
-
 
                 // Обновляем сообщение
                 const embed = new EmbedBuilder()
                     .setTitle(this.EMBED_TITLE)
-                    .setDescription(topPlayers.length > 0 ? topPlayers.join('\n') : 'Сейчас никого нет')
+                    .setDescription(topPlayers.length > 0 ? listPlayers.join('\n') : 'Сейчас никого нет')
                     .setColor(0x00FF00);
 
                 await message.edit({ embeds: [embed] });
