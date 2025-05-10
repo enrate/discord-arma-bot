@@ -59,12 +59,13 @@ export class TopPlayersManager {
     const kdDisplay = kd >= 4 ? `🔥${kd.toFixed(2)}` : 
                      kd >= 2 ? `⚡${kd.toFixed(2)}` : 
                      kd >= 1 ? `🟢${kd.toFixed(2)}` : 
-                     `🔻${p.kd}`;
+                     `🔻${kd.toFixed(2)}`;
 
     return `${positionIcon} **${p.player_name}**\n` +
-           `⚡ELO: **${p.ppm}** |   ` +
-           `⚔️K/D: ${kdDisplay} |   ` +
-           `🎯${p.kills}   |   ☠️${p.deaths}`;
+           `⚡ ELO:  **${String(p.ppm.toFixed(2)).padEnd(6, ' ')}` +
+           `   ⚔️ K/D:  ${kdDisplay.padEnd(5, ' ')}` + 
+           `   🎯 ${String(p.kills).padEnd(4, ' ')}` + 
+           `   ☠️ ${p.deaths}`;  
 });
 
 const embed = new EmbedBuilder()
