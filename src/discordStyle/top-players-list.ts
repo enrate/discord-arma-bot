@@ -3,7 +3,7 @@ import { pool } from '../db'; // Убраны фигурные скобки
 import { RowDataPacket } from 'mysql2';
 
 export class TopPlayersManager {
-    private static readonly EMBED_TITLE = 'Топ 20 игроков:';
+    private static readonly EMBED_TITLE = '🏆 ТОП-20 ИГРОКОВ 🏆';
 
     static async update(client: Client, channelId: string) {
         try {
