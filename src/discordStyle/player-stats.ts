@@ -348,7 +348,7 @@ const reply = await interaction.editReply({
             platformImage = await getSteamAvatar(platformData.platformId)
         }
         // Создаем холст
-        const canvas = createCanvas(800, 750);
+        const canvas = createCanvas(800, 800);
         const ctx = canvas.getContext('2d');
     
         // Рисуем фон
