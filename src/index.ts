@@ -7,6 +7,8 @@ import { PlayersManager } from './discordStyle/players-list';
 import { StatusManager } from './discordStyle/status';
 import { PlayersStats } from './discordStyle/player-stats';
 import { FindPlayerNickName } from './discordStyle/find-player-nick-name';
+import { TopPlayersManager } from './discordStyle/top-players-list';
+
 
 
 class ArmaBot {
@@ -27,7 +29,6 @@ class ArmaBot {
         await this.setupStatsChannel(); // Добавляем инициализацию канала статистики
         await this.setupGlobalStatsChannel();
         await this.setupFindNickNameChannel();
-        // await this.updateTopPlayers();
         this.startUpdateLoop();
     }
 
@@ -103,6 +104,10 @@ class ArmaBot {
         await PlayersManager.update(this.discordClient, this.config.discord.channelId);
     }
 
+    private async updateTopPlayersList() {
+        await TopPlayersManager.update(this.discordClient, this.config.discord.topPlayersChannelId)
+    }
+
 
     private startUpdateLoop() {
         // Обновление статуса каждую минуту
@@ -110,10 +115,14 @@ class ArmaBot {
         
         // Обновление списка игроков каждые 2 минуты
         setInterval(() => this.updatePlayerList(), 120_000);
+
+        //15 min
+        setInterval(() => this.updateTopPlayersList(), 900_000)
         
         Promise.all([
             this.updateStatus(),
-            this.updatePlayerList()
+            this.updatePlayerList(),
+            this.updateTopPlayersList()
         ]).catch(console.error);
     }
 
@@ -263,7 +272,8 @@ const config: ServerConfig = {
     discord: {
         token: process.env.DISCORD_TOKEN!,
         channelId: process.env.CHANNEL_ID!,
-        reportsChannel: process.env.REPORTS_CHANNEL!
+        reportsChannel: process.env.REPORTS_CHANNEL!,
+        topPlayersChannelId: process.env.TOP_PLAYERS_CHANNEL_ID!,
     }
 };
 

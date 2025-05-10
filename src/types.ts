@@ -7,6 +7,7 @@ export interface ServerConfig {
         token: string;
         channelId: string;
         reportsChannel: string;
+        topPlayersChannelId: string;
     };
 }
 
