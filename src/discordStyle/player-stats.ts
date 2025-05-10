@@ -400,7 +400,7 @@ const centerX = canvas.width / 2;  // canvas - ваш объект холста
             { title: 'Deaths:', value: data.stats.deaths },
             { title: 'Suicides:', value: data.stats.suicide },
             { title: 'Team kills:', value: data.stats.teamkills },
-            { title: 'TOP №:', value: data.stats.playedTime < 60 ? "Played time > 1 hour" : data.stats.top == 0 ? "Need more activity" : data.stats.top },
+            { title: 'TOP №:', value: data.stats.playedTime < 120 ? "Played time > 2 hour" :  data.stats.kills < 50 ? "Kills > 50" : data.stats.top == 0 ? "Need more activity" : data.stats.top },
             { title: 'Played time:', value: `${hours} hours ${data.stats.playedTime-hours*60} minutes` },
             { title: 'First connect:', value: dayjs(data.connection.timestamp_first_connection).add(3, 'hour').format("DD.MM.YYYY HH:mm") },
             { title: 'Last connect:', value: dayjs(data.connection.timestamp_last_connection).add(3, 'hour').format("DD.MM.YYYY HH:mm") }
