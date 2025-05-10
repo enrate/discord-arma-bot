@@ -395,7 +395,7 @@ const centerX = canvas.width / 2;  // canvas - ваш объект холста
         const hours = Math.floor(data.stats.playedTime / 60)
         const stats = [
             {title: "", value: ""},
-            { title: 'ELO:', value: data.stats.ppm.toFixed(0) },
+            { title: 'ELO:', value: Math.ceil(data.stats.ppm) },
             { title: 'K/D Ratio:', value: (data.stats.kills / (data.stats.deaths || 1)).toFixed(2) },
             { title: 'Kills:', value: data.stats.kills },
             { title: 'Deaths:', value: data.stats.deaths },

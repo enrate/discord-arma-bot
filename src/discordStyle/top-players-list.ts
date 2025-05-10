@@ -62,7 +62,7 @@ export class TopPlayersManager {
                      `🔻${kd.toFixed(2)}`;
 
                      return `${positionIcon} **${p.player_name}**\n` +
-       `⚡ELO:\u00A0\u00A0${p.ppm.toFixed(0)}\u00A0\u00A0•\u00A0\u00A0` +
+       `⚡ELO:\u00A0\u00A0${Math.ceil(p.ppm)}\u00A0\u00A0•\u00A0\u00A0` +
        `⚔️K/D:\u00A0\u00A0${kdDisplay}\u00A0\u00A0•\u00A0\u00A0` +
        `🎯\u00A0\u00A0${p.kills}\u00A0\u00A0•\u00A0\u00A0` +
        `☠️\u00A0\u00A0${p.deaths}`;
