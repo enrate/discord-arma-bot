@@ -61,11 +61,17 @@ export class TopPlayersManager {
                      kd >= 1 ? `🟢${kd.toFixed(2)}` : 
                      `🔻${kd.toFixed(2)}`;
 
-    return `${positionIcon} **${p.player_name}**\n` +
-           `⚡ ELO:  **${String(p.ppm).padEnd(6, ' ')}` +
-           `   ⚔️ K/D:  ${kdDisplay.padEnd(5, ' ')}` + 
-           `   🎯 ${String(p.kills).padEnd(4, ' ')}` + 
-           `   ☠️ ${p.deaths}`;  
+                     return `${positionIcon} **${p.player_name}**\n` +
+       `⚡\u00A0\u00A0${p.ppm}\u00A0\u00A0•\u00A0\u00A0` +
+       `⚔️\u00A0${kdDisplay}\u00A0\u00A0•\u00A0\u00A0` +
+       `🎯\u00A0${p.kills}\u00A0\u00A0•\u00A0\u00A0` +
+       `☠️\u00A0${p.deaths}`;
+
+    // return `${positionIcon} **${p.player_name}**\n` +
+    //        `⚡ ELO:  **${String(p.ppm).padEnd(6, ' ')}` +
+    //        `   ⚔️ K/D:  ${kdDisplay.padEnd(5, ' ')}` + 
+    //        `   🎯 ${String(p.kills).padEnd(4, ' ')}` + 
+    //        `   ☠️ ${p.deaths}`;  
 });
 
 const embed = new EmbedBuilder()
